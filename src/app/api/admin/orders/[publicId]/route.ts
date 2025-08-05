@@ -2,7 +2,7 @@ import { NextResponse, NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/session';
 
-export async function PUT(request: NextRequest, { params }: { params: { publicId: string } }) {
+export async function PUT(request: NextRequest, context: { params: { publicId: string } }) {
   try {
     const session = await getSession(request);
     if (!session.user || session.user.role !== 'ADMIN') {
@@ -10,7 +10,7 @@ export async function PUT(request: NextRequest, { params }: { params: { publicId
     }
 
     const { status } = await request.json();
-    const { publicId } = params;
+    const { publicId } = context.params;
 
     if (!status || !['PENDING', 'SHIPPED', 'DELIVERED', 'CANCELLED'].includes(status)) {
       return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
@@ -43,12 +43,12 @@ export async function PUT(request: NextRequest, { params }: { params: { publicId
       },
     });
 
-    return NextResponse.json(updatedOrder);
+    return NextResponse.json(updatedOrder, { status: 200 });
   } catch (error: unknown) {
     console.error('Error updating order:', error);
     if (error instanceof Error && 'code' in error && error.code === 'P2025') {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
-    return NextResponse.json({ error: 'Something went wrong' }, { status: 500 });
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
