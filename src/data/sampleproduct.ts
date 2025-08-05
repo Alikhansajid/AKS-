@@ -1,0 +1,118 @@
+// data/products.ts
+import type { Product } from './types';
+const sampleProducts:Product[] = [
+  {
+    id: 1,
+    publicId: 'prod_001',
+    slug: 'wireless-headphones',
+    name: 'Wireless Headphones',
+    price: 49.99,
+    quantity: 100,
+    image: 'https://res.cloudinary.com/dh1vlqndx/image/upload/v1752917649/Screenshot_2025-06-26_144546_hsobza.png',
+    category: {
+      id: 1,
+      name: 'Electronics',
+      slug: 'electronics',
+    },
+  },
+  {
+    id: 2,
+    publicId: 'prod_002',
+    slug: 'smartwatch-pro',
+    name: 'Smartwatch Pro',
+    price: 99.99,
+    quantity: 80,
+    image: 'https://res.cloudinary.com/dh1vlqndx/image/upload/v1752917649/Screenshot_2025-06-26_144546_hsobza.png',
+    category: {
+      id: 1,
+      name: 'Electronics',
+      slug: 'electronics',
+    },
+  },
+  {
+    id: 3,
+    publicId: 'prod_003',
+    slug: 'bluetooth-speaker',
+    name: 'Bluetooth Speaker',
+    price: 29.99,
+    quantity: 150,
+    image: 'https://res.cloudinary.com/dh1vlqndx/image/upload/v1752917649/Screenshot_2025-06-26_144546_hsobza.png',
+    category: {
+      id: 1,
+      name: 'Electronics',
+      slug: 'electronics',
+    },
+  },
+  {
+    id: 4,
+    publicId: 'prod_004',
+    slug: 'gaming-mouse',
+    name: 'Gaming Mouse',
+    price: 39.99,
+    quantity: 120,
+    image: 'https://res.cloudinary.com/dh1vlqndx/image/upload/v1752917649/Screenshot_2025-06-26_144546_hsobza.png',
+    category: {
+      id: 2,
+      name: 'Accessories',
+      slug: 'accessories',
+    },
+  },
+  {
+    id: 5,
+    publicId: 'prod_005',
+    slug: 'mechanical-keyboard',
+    name: 'Mechanical Keyboard',
+    price: 79.99,
+    quantity: 90,
+    image: 'https://res.cloudinary.com/dh1vlqndx/image/upload/v1752917649/Screenshot_2025-06-26_144546_hsobza.png',
+    category: {
+      id: 2,
+      name: 'Accessories',
+      slug: 'accessories',
+    },
+  },
+  {
+    id: 6,
+    publicId: 'prod_006',
+    slug: 'usb-c-hub',
+    name: 'USB-C Hub',
+    price: 19.99,
+    quantity: 200,
+    image: 'https://res.cloudinary.com/dh1vlqndx/image/upload/v1752917649/Screenshot_2025-06-26_144546_hsobza.png',
+    category: {
+      id: 2,
+      name: 'Accessories',
+      slug: 'accessories',
+    },
+  },
+  {
+    id: 7,
+    publicId: 'prod_007',
+    slug: 'portable-charger',
+    name: 'Portable Charger',
+    price: 34.99,
+    quantity: 140,
+    image: 'https://res.cloudinary.com/dh1vlqndx/image/upload/v1752917649/Screenshot_2025-06-26_144546_hsobza.png',
+    category: {
+      id: 2,
+      name: 'Accessories',
+      slug: 'accessories',
+    },
+  },
+  {
+    id: 8,
+    publicId: 'prod_008',
+    slug: 'led-monitor',
+    name: 'LED Monitor',
+    price: 129.99,
+    quantity: 70,
+    image: 'https://res.cloudinary.com/dh1vlqndx/image/upload/v1752917649/Screenshot_2025-06-26_144546_hsobza.png',
+    category: {
+      id: 1,
+      name: 'Electronics',
+      slug: 'electronics',
+    },
+  },
+];
+
+export default sampleProducts;

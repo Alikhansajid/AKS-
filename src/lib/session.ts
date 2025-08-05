@@ -1,31 +1,65 @@
+// // lib/session.ts
+// import { SessionOptions, getIronSession } from 'iron-session';
+// import { NextRequest, NextResponse } from 'next/server';
+
+// export interface SessionData {
+//   user?: {
+//     publicId: string;
+//     email: string;
+//     name: string;
+//     phone?: string;
+//     profilePic?: string;
+//   };
+// }
+
+
+
+
+// export const sessionOptions: SessionOptions = {
+//   cookieName: 'myapp_session',
+//   password: process.env.SESSION_SECRET as string,
+//   cookieOptions: {
+//     secure: process.env.NODE_ENV === 'production',
+//     httpOnly: true,
+//     sameSite: 'lax' as const,
+//     path: '/',
+//     maxAge: 24 * 60 * 60, 
+//   },
+// };
+
+// export async function getSession(req: NextRequest) {
+//   const res = NextResponse.next();
+//   return await getIronSession<SessionData>(req, res, sessionOptions);
+// }
+
 // lib/session.ts
-import { getIronSession } from 'iron-session';
+import { SessionOptions, getIronSession } from 'iron-session';
 import { NextRequest, NextResponse } from 'next/server';
 
-// Define the shape of the session data
-interface SessionData {
+export interface SessionData {
   user?: {
     publicId: string;
     email: string;
-    name: string | null;
+    name: string;
+    phone?: string;
+    profilePic?: string;
+    role?: string;
   };
 }
 
-// Define session options
-export const sessionOptions = {
-  password: process.env.SECRET_COOKIE_PASSWORD as string,
-  cookieName: 'my-app-session',
+export const sessionOptions: SessionOptions = {
+  cookieName: 'myapp_session',
+  password: process.env.SESSION_SECRET!,
   cookieOptions: {
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
-    sameSite: 'strict' as const,
-    maxAge: 60 * 60 * 24 * 14, // 14 days
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 24 * 60 * 60,
   },
 };
 
-// Extend the IronSession type to include the user property
-type IronSession = Awaited<ReturnType<typeof getIronSession>> & SessionData;
-
-export async function getSession(req: NextRequest | Request, res: NextResponse | Response): Promise<IronSession> {
-  return getIronSession(req, res, sessionOptions) as Promise<IronSession>;
+export async function getSession(req: NextRequest) {
+  const res = NextResponse.next(); // ✅ Keep this for use in edge/server contexts
+  return await getIronSession<SessionData>(req, res, sessionOptions);
 }

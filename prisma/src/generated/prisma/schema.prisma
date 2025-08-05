@@ -1,0 +1,170 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "./src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  CUSTOMER
+  RIDER
+}
+
+enum OrderStatus {
+  PENDING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+model User {
+  id         Int       @id @default(autoincrement())
+  publicId   String    @unique @default(cuid()) @map("public_id")
+  name       String
+  email      String    @unique
+  phone      String
+  password   String
+  profilePic String?   @map("profile_pic")
+  role       Role      @default(CUSTOMER)
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+  deletedAt  DateTime? @map("deleted_at")
+
+  updatedProducts   Product[]  @relation("UpdatedByUser_Product")
+  updatedCategories Category[] @relation("UpdatedByUser_Category")
+  carts             Cart[]
+  orders            Order[]
+
+  @@map("user")
+}
+
+model Category {
+  id          Int        @id @default(autoincrement())
+  publicId    String     @unique @default(cuid()) @map("public_id")
+  name        String     @unique
+  slug        String     @unique
+  parentId    Int?       @map("parent_id")
+  parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryHierarchy")
+  updatedById Int?
+  updatedBy   User?      @relation("UpdatedByUser_Category", fields: [updatedById], references: [id])
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+  deletedAt   DateTime?  @map("deleted_at")
+
+  products Product[]
+
+  @@map("category")
+}
+
+model Product {
+  id          Int       @id @default(autoincrement())
+  publicId    String    @unique @default(cuid()) @map("public_id")
+  slug        String    @unique
+  name        String
+  price       Float
+  quantity    Int
+  categoryId  Int
+  updatedById Int?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  category   Category       @relation(fields: [categoryId], references: [id])
+  updatedBy  User?          @relation("UpdatedByUser_Product", fields: [updatedById], references: [id])
+  images     ProductImage[]
+  cartItems  CartItem[]
+  orderItems OrderItem[]
+
+  @@map("product")
+}
+
+model ProductImage {
+  id        Int      @id @default(autoincrement())
+  productId Int
+  url       String
+  createdAt DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id])
+
+  @@map("product_image")
+}
+
+model Cart {
+  id        Int       @id @default(autoincrement())
+  publicId  String    @unique @default(cuid()) @map("public_id")
+  userId    Int
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  user  User       @relation(fields: [userId], references: [id])
+  items CartItem[]
+
+  @@map("cart")
+}
+
+model CartItem {
+  id        Int       @id @default(autoincrement())
+  publicId  String    @unique @default(cuid()) @map("public_id")
+  cartId    Int
+  productId Int
+  quantity  Int       @default(1)
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  cart    Cart    @relation(fields: [cartId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+
+  @@map("cart_item")
+}
+
+model Order {
+  id        Int         @id @default(autoincrement())
+  publicId  String      @unique @default(cuid()) @map("public_id")
+  userId    Int
+  status    OrderStatus @default(PENDING)
+  createdAt DateTime    @default(now()) @map("created_at")
+  updatedAt DateTime    @updatedAt @map("updated_at")
+  deletedAt DateTime?   @map("deleted_at")
+
+  user    User        @relation(fields: [userId], references: [id])
+  items   OrderItem[]
+  payment Payment?
+
+  @@map("order")
+}
+
+model OrderItem {
+  id        Int      @id @default(autoincrement())
+  orderId   Int
+  productId Int
+  quantity  Int
+  price     Float
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  order   Order   @relation(fields: [orderId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+
+  @@map("order_item")
+}
+
+model Payment {
+  id        Int      @id @default(autoincrement())
+  orderId   Int      @unique
+  method    String
+  status    String
+  reference String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  order Order @relation(fields: [orderId], references: [id])
+
+  @@map("payment")
+}

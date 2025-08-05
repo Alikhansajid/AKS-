@@ -1,4 +1,5 @@
-import { PrismaClient } from '@/generated/prisma';
+import { PrismaClient } from '../../prisma/src/generated/prisma'; // ✅ relative path
+
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
@@ -16,9 +17,3 @@ if (process.env.NODE_ENV !== 'production')
 }
 
 
-
-//iron session
-//reomve login page after login 
-//redirect to home page if i logged in earlier 
-
-//increase reuseablilty in code 
