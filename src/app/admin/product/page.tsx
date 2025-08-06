@@ -452,7 +452,7 @@ export default function AdminProduct() {
                   </td>
                   <td className="py-3 px-4 border-b">
                     <Link
-                      href={`/admin/products/edit/${product.publicId}`}
+                      href={`/admin/products/edits/${product.publicId}`}
                       className="bg-blue-600 text-white px-2 py-1 rounded mr-2 hover:bg-blue-700 transition-colors text-sm"
                     >
                       Edit

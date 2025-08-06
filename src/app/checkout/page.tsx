@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -6,10 +7,24 @@ import useSWR from 'swr';
 import { toast } from 'react-toastify';
 import type { CartItem } from '@/types';
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+const fetcher = async (url: string): Promise<CartItem[]> => {
+  const res = await fetch(url, { credentials: 'include' });
+  if (!res.ok) {
+    let errorText;
+    try {
+      errorText = await res.text();
+      const errorData = JSON.parse(errorText);
+      throw new Error(errorData.error || errorData.details || 'Failed to fetch cart');
+    } catch {
+      throw new Error('Failed to fetch cart');
+    }
+  }
+  const data = await res.json();
+  return Array.isArray(data) ? data : [];
+};
 
 export default function CheckoutPage() {
-  const { data: cartItems } = useSWR<CartItem[]>('/api/cart', fetcher);
+  const { data: cartItems, error } = useSWR<CartItem[], Error>('/api/cart', fetcher);
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const router = useRouter();
 
@@ -31,9 +46,17 @@ export default function CheckoutPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ paymentMethod: method }),
+        credentials: 'include',
       });
 
-      const result = await res.json();
+      let result;
+      try {
+        result = await res.json();
+      } catch (jsonError) {
+        console.error('JSON parse error:', jsonError);
+        throw new Error('Invalid response from server');
+      }
+
       setIsPlacingOrder(false);
 
       if (res.ok && method === 'COD') {
@@ -42,16 +65,23 @@ export default function CheckoutPage() {
       } else if (res.ok && method === 'card' && result.paymentUrl) {
         window.location.href = result.paymentUrl;
       } else {
-        toast.error(result.error || 'Checkout failed');
+        toast.error(result.error || result.details || 'Checkout failed');
       }
     } catch (error) {
-      console.error('Checkout error:', error);
-      toast.error('Unexpected error occurred.');
+      const errorMessage = error instanceof Error ? error.message : 'Unexpected error occurred';
+      console.error('Checkout error:', { message: errorMessage, stack: error instanceof Error ? error.stack : undefined });
+      toast.error(errorMessage);
       setIsPlacingOrder(false);
     }
   };
 
-  if (!cartItems) return <p>Loading cart...</p>;
+  if (error) {
+    return <p className="text-center text-red-500">Error: {error.message}</p>;
+  }
+
+  if (!cartItems) {
+    return <p className="text-center text-gray-500">Loading cart...</p>;
+  }
 
   return (
     <div className="max-w-4xl mx-auto p-6">

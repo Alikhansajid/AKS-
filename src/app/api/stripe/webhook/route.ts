@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
       process.env.STRIPE_WEBHOOK_SECRET!
     );
   } catch (err) {
-    console.error('⚠️ Webhook signature verification failed.', err);
+    console.error('Webhook signature verification failed.', err);
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
   }
 
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
           order: { id: parseInt(orderId) },
         },
         data: {
-          status: 'success',
+          status: 'SUCCESS',
         },
       });
     }

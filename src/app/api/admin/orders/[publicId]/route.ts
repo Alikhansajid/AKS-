@@ -2,15 +2,16 @@ import { NextResponse, NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/session';
 
-export async function PUT(request: NextRequest, context: { params: { publicId: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: { publicId: string } }) {
   try {
     const session = await getSession(request);
     if (!session.user || session.user.role !== 'ADMIN') {
+      console.error('Unauthorized access attempt:', { session });
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { status } = await request.json();
-    const { publicId } = context.params;
+    const { publicId } = params;
 
     if (!status || !['PENDING', 'SHIPPED', 'DELIVERED', 'CANCELLED'].includes(status)) {
       return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
@@ -25,12 +26,11 @@ export async function PUT(request: NextRequest, context: { params: { publicId: s
       return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
 
-    if (status === 'CANCELLED' && order.payment?.status === 'completed') {
-      return NextResponse.json({ error: 'Cannot cancel order with completed payment' }, { status: 400 });
-    }
-
-    if (order.status === 'DELIVERED') {
-      return NextResponse.json({ error: 'Cannot change status of delivered order' }, { status: 400 });
+    if (status === 'CANCELLED' && (order.payment?.status === 'SUCCESS' || order.status === 'DELIVERED')) {
+      return NextResponse.json(
+        { error: 'Cannot cancel order with successful payment or delivered status' },
+        { status: 400 }
+      );
     }
 
     const updatedOrder = await prisma.order.update({
@@ -45,10 +45,11 @@ export async function PUT(request: NextRequest, context: { params: { publicId: s
 
     return NextResponse.json(updatedOrder, { status: 200 });
   } catch (error: unknown) {
-    console.error('Error updating order:', error);
-    if (error instanceof Error && 'code' in error && error.code === 'P2025') {
-      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
-    }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Error updating order:', {
+      message: errorMessage,
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+    return NextResponse.json({ error: 'Internal server error', details: errorMessage }, { status: 500 });
   }
 }

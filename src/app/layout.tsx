@@ -4,7 +4,6 @@ import "./globals.css";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Navbar from "./components/nav";
-import { HelmetProvider } from "react-helmet-async";
 
 const inter = Inter({
   variable: "--font-sans",
@@ -39,18 +38,13 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       </head>
       <body className="antialiased">
-        <HelmetProvider>
-          <Navbar />
-          <main className="min-h-screen">
-            {children}
-          </main>
-          <ToastContainer position="top-center" autoClose={2000} />
-        </HelmetProvider>
+        <Navbar />
+        <main className="min-h-screen">{children}</main>
+        <ToastContainer position="top-center" autoClose={2000} />
       </body>
     </html>
   );
 }
-
 
 
 

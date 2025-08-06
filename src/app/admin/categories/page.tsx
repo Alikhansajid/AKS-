@@ -136,8 +136,8 @@ export default function Categories() {
       <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
       <h1 className="text-3xl font-bold text-blue-800 mb-6 text-center">Manage Categories</h1>
       <div className="mb-6">
-        <Link href="/admin/addProduct" className="text-blue-600 hover:text-blue-800 font-semibold">
-          Back to 
+        <Link href="/admin/product" className="text-blue-600 hover:text-blue-800 font-semibold">
+          Back to products
         </Link>
       </div>
 

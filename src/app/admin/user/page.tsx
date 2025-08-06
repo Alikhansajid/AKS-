@@ -11,25 +11,34 @@ interface User {
   name: string;
   email: string;
   phone: string;
-  role:[ 'ADMIN','CUSTOMER','RIDER'];
+  role: 'ADMIN' | 'CUSTOMER' | 'RIDER'; 
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
 }
 
-const fetcher = (url: string) => fetch(url, { credentials: 'include' }).then((res) => res.json());
+const fetcher = async (url: string): Promise<User[]> => {
+  const res = await fetch(url, { credentials: 'include' });
+  const data = await res.json();
+ 
+  if (!res.ok) {
+    throw new Error(data.error || data.details || 'Failed to fetch users');
+  }
+  return Array.isArray(data) ? data : [];
+};
 
 export default function AdminUsers() {
   const router = useRouter();
-  const { data: users, mutate } = useSWR<User[]>('/api/admin/users', fetcher, { refreshInterval: 5000 });
+  const { data: users, error, mutate } = useSWR<User[], Error>('/api/admin/users', fetcher, { refreshInterval: 5000 });
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [formData, setFormData] = useState({ name: '', email: '', phone: '', role: 'CUSTOMER' as 'ADMIN' | 'CUSTOMER' });
+  const [formData, setFormData] = useState({ name: '', email: '', phone: '', role: 'CUSTOMER' as 'ADMIN' | 'CUSTOMER' | 'RIDER' });
 
   useEffect(() => {
     async function checkAdmin() {
       try {
         const res = await fetch('/api/auth/session', { credentials: 'include' });
         const data = await res.json();
+        console.log('Session Response:', data);
         if (!data.user || data.user.role !== 'ADMIN') {
           toast.error('Unauthorized access');
           router.push('/');
@@ -59,7 +68,7 @@ export default function AdminUsers() {
       const data = await res.json();
       if (res.ok) {
         toast.success('User updated successfully');
-        mutate(); // Refetch data
+        mutate();
         setSelectedUser(null);
         setFormData({ name: '', email: '', phone: '', role: 'CUSTOMER' });
       } else {
@@ -83,7 +92,7 @@ export default function AdminUsers() {
       const data = await res.json();
       if (res.ok) {
         toast.success('User deleted successfully');
-        mutate(); // Refetch data
+        mutate();
       } else {
         toast.error(data.error || 'Failed to delete user');
       }
@@ -98,12 +107,22 @@ export default function AdminUsers() {
     setFormData({ name: user.name, email: user.email, phone: user.phone, role: user.role });
   };
 
-  const roleOptions = ['ADMIN', 'CUSTOMER','RIDER'];
+  const roleOptions: ('ADMIN' | 'CUSTOMER' | 'RIDER')[] = ['ADMIN', 'CUSTOMER', 'RIDER'];
+
+  if (error) {
+    return <div className="text-center text-red-500">Error: {error.message}</div>;
+  }
+
+  if (!users) {
+    return <div className="text-center text-gray-500">Loading users...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white p-6">
       <h1 className="text-3xl font-bold text-blue-800 mb-6">Manage Users</h1>
-      {users ? (
+      {users.length === 0 ? (
+        <div className="text-center text-gray-500">No users found.</div>
+      ) : (
         <>
           <div className="overflow-x-auto bg-white rounded-lg shadow-lg">
             <table className="min-w-full text-sm text-left text-gray-700">
@@ -120,7 +139,7 @@ export default function AdminUsers() {
               </thead>
               <tbody>
                 {users
-                  .filter((user) => !user.deletedAt) // Show only non-deleted users
+                  .filter((user) => !user.deletedAt)
                   .map((user) => (
                     <tr key={user.publicId} className="border-b hover:bg-gray-50">
                       <td className="py-3 px-4">{user.publicId}</td>
@@ -185,7 +204,7 @@ export default function AdminUsers() {
                   <label className="block text-sm font-medium text-gray-700">Role</label>
                   <select
                     value={formData.role}
-                    onChange={(e) => setFormData({ ...formData, role: e.target.value as 'ADMIN' | 'CUSTOMER' })}
+                    onChange={(e) => setFormData({ ...formData, role: e.target.value as 'ADMIN' | 'CUSTOMER' | 'RIDER' })}
                     className="w-full p-2 border rounded"
                   >
                     {roleOptions.map((role) => (
@@ -216,8 +235,6 @@ export default function AdminUsers() {
             </div>
           )}
         </>
-      ) : (
-        <div className="text-center text-gray-500">Loading users...</div>
       )}
     </div>
   );

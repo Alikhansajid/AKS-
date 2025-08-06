@@ -21,6 +21,12 @@ enum OrderStatus {
   CANCELLED
 }
 
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
 model User {
   id         Int       @id @default(autoincrement())
   publicId   String    @unique @default(cuid()) @map("public_id")
@@ -156,13 +162,13 @@ model OrderItem {
 }
 
 model Payment {
-  id        Int      @id @default(autoincrement())
-  orderId   Int      @unique
+  id        Int           @id @default(autoincrement())
+  orderId   Int           @unique
   method    String
-  status    String
+  status    PaymentStatus
   reference String?
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt DateTime      @default(now()) @map("created_at")
+  updatedAt DateTime      @updatedAt @map("updated_at")
 
   order Order @relation(fields: [orderId], references: [id])
 

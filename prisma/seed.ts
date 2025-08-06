@@ -193,7 +193,7 @@ async function main() {
   ];
 
   const sampleImages = [
-    'https://res.cloudinary.com/dh1vlqndx/image/upload/v1752917649/Screenshot_2025-06-26_144546_hsobza.png',
+    'https://res.cloudinary.com/dh1vlqndx/image/upload/v1752910790/samples/animals/cat.jpg',
     'https://res.cloudinary.com/dh1vlqndx/image/upload/v1752910800/cld-sample-4.jpg'
   ];
 

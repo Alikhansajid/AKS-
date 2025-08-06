@@ -10,25 +10,43 @@ interface Order {
   publicId: string;
   userId: number;
   user: { name: string; email: string };
-  status: string;
+  status: 'PENDING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
   createdAt: string;
   updatedAt: string;
   items: { productId: number; quantity: number; price: number; product: { name: string } }[];
+  payment?: { status: 'PENDING' | 'SUCCESS' | 'FAILED' };
 }
 
-const fetcher = (url: string) => fetch(url, { credentials: 'include' }).then((res) => res.json());
+interface ApiResponse {
+  data?: Order[];
+  error?: string;
+}
+
+const fetcher = async (url: string): Promise<Order[]> => {
+  const res = await fetch(url, { credentials: 'include' });
+  const data = await res.json();
+  console.log('API Response for', url, ':', data); // Debug log
+  if (!res.ok) {
+    throw new Error(data.error || data.details || 'Failed to fetch orders');
+  }
+  return Array.isArray(data) ? data : [];
+};
 
 export default function AdminOrders() {
   const router = useRouter();
-  const { data: orders, mutate } = useSWR<Order[]>('/api/admin/orders', fetcher, { refreshInterval: 5000 });
+  const { data: orders, error, mutate } = useSWR<Order[], Error, string>('/api/admin/orders', fetcher, {
+    refreshInterval: 5000,
+    revalidateOnFocus: true,
+  });
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const [newStatus, setNewStatus] = useState('');
+  const [newStatus, setNewStatus] = useState<'' | 'PENDING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED'>('');
 
   useEffect(() => {
     async function checkAdmin() {
       try {
         const res = await fetch('/api/auth/session', { credentials: 'include' });
         const data = await res.json();
+        console.log('Session Response:', data); // Debug log
         if (!data.user || data.user.role !== 'ADMIN') {
           toast.error('Unauthorized access');
           router.push('/');
@@ -42,7 +60,7 @@ export default function AdminOrders() {
     checkAdmin();
   }, [router]);
 
-  const updateStatus = async (publicId: number) => {
+  const updateStatus = async (publicId: string) => {
     if (!newStatus) {
       toast.error('Please select a status');
       return;
@@ -58,7 +76,7 @@ export default function AdminOrders() {
       const data = await res.json();
       if (res.ok) {
         toast.success('Order status updated');
-        mutate(); // Refetch data
+        mutate();
         setSelectedOrder(null);
         setNewStatus('');
       } else {
@@ -70,12 +88,27 @@ export default function AdminOrders() {
     }
   };
 
-  const statusOptions = ['pending', 'shipped', 'delivered', 'cancelled'];
+  const statusOptions: ('PENDING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED')[] = [
+    'PENDING',
+    'SHIPPED',
+    'DELIVERED',
+    'CANCELLED',
+  ];
+
+  if (error) {
+    return <div className="text-center text-red-500">Error: {error.message}</div>;
+  }
+
+  if (!orders) {
+    return <div className="text-center text-gray-500">Loading orders...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white p-6">
       <h1 className="text-3xl font-bold text-blue-800 mb-6">Manage Orders</h1>
-      {orders ? (
+      {orders.length === 0 ? (
+        <div className="text-center text-gray-500">No orders found.</div>
+      ) : (
         <>
           <div className="overflow-x-auto bg-white rounded-lg shadow-lg">
             <table className="min-w-full text-sm text-left text-gray-700">
@@ -84,6 +117,7 @@ export default function AdminOrders() {
                   <th className="py-3 px-4">Order ID</th>
                   <th className="py-3 px-4">User</th>
                   <th className="py-3 px-4">Status</th>
+                  <th className="py-3 px-4">Payment Status</th>
                   <th className="py-3 px-4">Items</th>
                   <th className="py-3 px-4">Total</th>
                   <th className="py-3 px-4">Created At</th>
@@ -94,18 +128,28 @@ export default function AdminOrders() {
                 {orders.map((order) => (
                   <tr key={order.publicId} className="border-b hover:bg-gray-50">
                     <td className="py-3 px-4">{order.publicId}</td>
-                    <td className="py-3 px-4">{order.user.name} ({order.user.email})</td>
+                    <td className="py-3 px-4">
+                      {order.user.name} ({order.user.email})
+                    </td>
                     <td className="py-3 px-4">{order.status}</td>
+                    <td className="py-3 px-4">{order.payment?.status || 'N/A'}</td>
                     <td className="py-3 px-4">
                       {order.items.map((item, idx) => (
-                        <div key={idx}>{item.quantity} x {item.product.name} (${item.price.toFixed(2)})</div>
+                        <div key={idx}>
+                          {item.quantity} x {item.product.name} (${item.price.toFixed(2)})
+                        </div>
                       ))}
                     </td>
-                    <td className="py-3 px-4">${order.items.reduce((sum, item) => sum + item.quantity * item.price, 0).toFixed(2)}</td>
+                    <td className="py-3 px-4">
+                      ${order.items.reduce((sum, item) => sum + item.quantity * item.price, 0).toFixed(2)}
+                    </td>
                     <td className="py-3 px-4">{new Date(order.createdAt).toLocaleDateString()}</td>
                     <td className="py-3 px-4">
                       <button
-                        onClick={() => setSelectedOrder(order)}
+                        onClick={() => {
+                          setSelectedOrder(order);
+                          setNewStatus(order.status);
+                        }}
                         className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 mr-2"
                       >
                         Update Status
@@ -124,24 +168,40 @@ export default function AdminOrders() {
                 <p className="mb-2">Order ID: {selectedOrder.publicId}</p>
                 <select
                   value={newStatus}
-                  onChange={(e) => setNewStatus(e.target.value)}
+                  onChange={(e) =>
+                    setNewStatus(e.target.value as '' | 'PENDING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED')
+                  }
                   className="w-full p-2 border rounded mb-4"
+                  disabled={selectedOrder.payment?.status === 'SUCCESS' || selectedOrder.status === 'DELIVERED'}
                 >
                   <option value="">Select Status</option>
                   {statusOptions.map((status) => (
-                    <option key={status} value={status}>{status}</option>
+                    <option
+                      key={status}
+                      value={status}
+                      disabled={
+                        status === 'CANCELLED' &&
+                        (selectedOrder.payment?.status === 'SUCCESS' || selectedOrder.status === 'DELIVERED')
+                      }
+                    >
+                      {status}
+                    </option>
                   ))}
                 </select>
                 <div className="flex justify-end gap-4">
                   <button
-                    onClick={() => { setSelectedOrder(null); setNewStatus(''); }}
+                    onClick={() => {
+                      setSelectedOrder(null);
+                      setNewStatus('');
+                    }}
                     className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
                   >
                     Cancel
                   </button>
                   <button
-                    onClick={() => updateStatus(selectedOrder.id)}
+                    onClick={() => updateStatus(selectedOrder.publicId)}
                     className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                    disabled={selectedOrder.payment?.status === 'SUCCESS' || selectedOrder.status === 'DELIVERED'}
                   >
                     Save
                   </button>
@@ -150,8 +210,6 @@ export default function AdminOrders() {
             </div>
           )}
         </>
-      ) : (
-        <div className="text-center text-gray-500">Loading orders...</div>
       )}
     </div>
   );
