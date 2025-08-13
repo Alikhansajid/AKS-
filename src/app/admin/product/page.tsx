@@ -71,7 +71,6 @@ class ImageErrorBoundary extends Component<ImageErrorBoundaryProps, ImageErrorBo
           width={50}
           height={50}
           className="rounded object-cover"
-          onError={() => console.error('Placeholder image failed to load')}
         />
       );
     }
@@ -94,29 +93,25 @@ export default function AdminProduct() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Check admin access
   useEffect(() => {
     fetch('/api/auth/session')
       .then(res => res.json())
       .then(data => {
-        if (data.user?.role !== 'ADMIN') {
+        if (data?.user?.role !== 'ADMIN') {
           router.push('/');
         }
       })
-      .catch(error => {
-        console.error('Error fetching session:', error);
+      .catch(() => {
         toast.error('Failed to verify session. Redirecting...');
         router.push('/');
       });
   }, [router]);
 
-  // Fetch products and categories
   useEffect(() => {
     fetchProducts();
     fetchCategories();
   }, []);
 
-  // Filter products based on search and category
   useEffect(() => {
     let filtered = products;
 
@@ -127,9 +122,7 @@ export default function AdminProduct() {
     }
 
     if (selectedCategory) {
-      filtered = filtered.filter(product =>
-        product.categoryId === parseInt(selectedCategory)
-      );
+      filtered = filtered.filter(product => product.categoryId === parseInt(selectedCategory));
     }
 
     setFilteredProducts(filtered);
@@ -138,11 +131,10 @@ export default function AdminProduct() {
   const fetchProducts = async () => {
     try {
       const res = await fetch('/api/admin/products');
-      if (!res.ok) throw new Error('Failed to fetch products');
+      if (!res.ok) throw new Error();
       const data: Product[] = await res.json();
       setProducts(data);
-    } catch (error) {
-      console.error('Failed to load products:', error);
+    } catch {
       toast.error('Failed to load products');
     }
   };
@@ -150,11 +142,10 @@ export default function AdminProduct() {
   const fetchCategories = async () => {
     try {
       const res = await fetch('/api/admin/categories');
-      if (!res.ok) throw new Error('Failed to fetch categories');
+      if (!res.ok) throw new Error();
       const data: Category[] = await res.json();
       setCategories(data);
-    } catch (error) {
-      console.error('Failed to load categories:', error);
+    } catch {
       toast.error('Failed to load categories');
     }
   };
@@ -192,14 +183,9 @@ export default function AdminProduct() {
         router.push('/admin/product');
       } else {
         const errorData = await res.json();
-        if (res.status === 500) {
-          toast.error('Server failed to process images. Please try again or upload different images.');
-        } else {
-          toast.error(errorData.error || 'Failed to add product');
-        }
+        toast.error(errorData.error || 'Failed to add product');
       }
-    } catch (error) {
-      console.error('Error adding product:', error);
+    } catch {
       toast.error('An error occurred while adding the product');
     }
   };
@@ -207,26 +193,16 @@ export default function AdminProduct() {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
-      const currentImageCount = images.length;
-      if (currentImageCount >= 4) {
-        toast.error('Maximum 4 images allowed.');
-        return;
-      }
-
-      const remainingSlots = 4 - currentImageCount;
+      const remainingSlots = 4 - images.length;
       const selectedFiles = Array.from(files).slice(0, remainingSlots);
 
       const validImages = selectedFiles.filter(file => {
         const isValidType = file.type.startsWith('image/');
-        const isValidSize = file.size <= 5 * 1024 * 1024; // 5MB limit
-        if (!isValidType) toast.error(`Image ${file.name} is not a valid image type.`);
-        if (!isValidSize) toast.error(`Image ${file.name} exceeds 5MB limit.`);
+        const isValidSize = file.size <= 5 * 1024 * 1024;
+        if (!isValidType) toast.error(`${file.name} is not a valid image.`);
+        if (!isValidSize) toast.error(`${file.name} exceeds 5MB limit.`);
         return isValidType && isValidSize;
       });
-
-      if (validImages.length !== selectedFiles.length) {
-        toast.error('Some images were invalid or too large. Only valid images are uploaded.');
-      }
 
       setImages(prev => [...prev, ...validImages].slice(0, 4));
     }
@@ -239,51 +215,50 @@ export default function AdminProduct() {
 
   const handleDelete = async (publicId: string) => {
     try {
-      const res = await fetch(`/api/admin/products/${publicId}`, {
-        method: 'DELETE',
-      });
+      const res = await fetch(`/api/admin/products/${publicId}`, { method: 'DELETE' });
       if (res.ok) {
         fetchProducts();
         toast.success('Product deleted successfully');
       } else {
-        const errorData = await res.json();
-        toast.error(errorData.error || 'Failed to delete product');
+        toast.error('Failed to delete product');
       }
-    } catch (error) {
-      console.error('Error deleting product:', error);
+    } catch {
       toast.error('An error occurred while deleting the product');
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white p-6">
+    <div className="min-h-screen p-6" style={{ backgroundColor: '#18181b' }}>
       <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
-      <h1 className="text-3xl font-bold text-blue-800 mb-6 text-center">Product Management</h1>
-      <div className="mb-6">
-        <Link href="/admin/categories" className="text-blue-600 hover:text-blue-800 font-semibold">
+      <h1 className="text-3xl font-bold text-yellow-400 mb-6 text-center">Product Management</h1>
+
+      <div className="mb-6 text-center">
+        <Link href="/admin/categories" className="text-yellow-400 hover:text-yellow-300 font-semibold">
           Manage Categories
         </Link>
       </div>
 
-      {/* Search and Filter Controls */}
+      {/* Search and Filter */}
       <div className="mb-6 flex flex-col md:flex-row gap-4">
         <input
           type="text"
-          placeholder="Search products by name..."
+          placeholder="Search products..."
           value={searchQuery}
           onChange={e => setSearchQuery(e.target.value)}
-          className="border p-3 rounded text-gray-700 focus:ring-2 focus:ring-blue-500 w-full md:w-1/2"
+          className="p-3 rounded-lg w-full md:w-1/2"
+          style={{ backgroundColor: '#3f3f47', color: 'white', border: '1px solid #555' }}
         />
         <select
           value={selectedCategory}
           onChange={e => setSelectedCategory(e.target.value)}
-          className="border p-3 rounded text-gray-700 focus:ring-2 focus:ring-blue-500 w-full md:w-1/4"
+          className="p-3 rounded-lg w-full md:w-1/4"
+          style={{ backgroundColor: '#3f3f47', color: 'white', border: '1px solid #555' }}
         >
           <option value="">All Categories</option>
           {categories.map(cat => (
             <optgroup key={cat.publicId} label={cat.name}>
               <option value={cat.id}>{cat.name}</option>
-              {cat.children.map(sub => (
+              {cat.children?.map(sub => (
                 <option key={sub.publicId} value={sub.id}>
                   &nbsp;&nbsp;{sub.name}
                 </option>
@@ -293,24 +268,27 @@ export default function AdminProduct() {
         </select>
         <button
           onClick={() => setShowAddModal(true)}
-          className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition duration-300 shadow-md"
+          className="px-6 py-3 rounded-lg transition shadow-md"
+          style={{ backgroundColor: '#facc15', color: '#000' }}
         >
           Add Product
         </button>
       </div>
 
-      {/* Add Product Modal */}
+      {/* Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg max-w-2xl w-full">
-            <h2 className="text-xl font-semibold text-gray-700 mb-4">Add Product</h2>
+          <div className="p-6 rounded-xl shadow-lg max-w-2xl w-full" style={{ backgroundColor: '#3f3f47' }}>
+            <h2 className="text-xl font-semibold mb-4 text-white">Add Product</h2>
             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Inputs */}
               <input
                 type="text"
                 placeholder="Product Name"
                 value={name}
                 onChange={e => setName(e.target.value)}
-                className="border p-3 rounded text-gray-700 focus:ring-2 focus:ring-blue-500"
+                className="p-3 rounded-lg"
+                style={{ backgroundColor: '#18181b', color: 'white', border: '1px solid #555' }}
                 required
               />
               <input
@@ -318,8 +296,8 @@ export default function AdminProduct() {
                 placeholder="Price"
                 value={price}
                 onChange={e => setPrice(e.target.value)}
-                className="border p-3 rounded text-gray-700 focus:ring-2 focus:ring-blue-500"
-                step="0.01"
+                className="p-3 rounded-lg"
+                style={{ backgroundColor: '#18181b', color: 'white', border: '1px solid #555' }}
                 required
               />
               <input
@@ -327,20 +305,22 @@ export default function AdminProduct() {
                 placeholder="Quantity"
                 value={quantity}
                 onChange={e => setQuantity(e.target.value)}
-                className="border p-3 rounded text-gray-700 focus:ring-2 focus:ring-blue-500"
+                className="p-3 rounded-lg"
+                style={{ backgroundColor: '#18181b', color: 'white', border: '1px solid #555' }}
                 required
               />
               <select
                 value={categoryId}
                 onChange={e => setCategoryId(e.target.value)}
-                className="border p-3 rounded text-gray-700 focus:ring-2 focus:ring-blue-500"
+                className="p-3 rounded-lg"
+                style={{ backgroundColor: '#18181b', color: 'white', border: '1px solid #555' }}
                 required
               >
                 <option value="">Select Category</option>
                 {categories.map(cat => (
                   <optgroup key={cat.publicId} label={cat.name}>
                     <option value={cat.id}>{cat.name}</option>
-                    {cat.children.map(sub => (
+                    {cat.children?.map(sub => (
                       <option key={sub.publicId} value={sub.id}>
                         &nbsp;&nbsp;{sub.name}
                       </option>
@@ -348,12 +328,15 @@ export default function AdminProduct() {
                   </optgroup>
                 ))}
               </select>
+
+              {/* Images */}
               <div className="md:col-span-2">
                 <input
                   type="file"
                   multiple
                   onChange={handleImageChange}
-                  className="border p-3 rounded text-gray-700 w-full"
+                  className="p-3 rounded-lg w-full"
+                  style={{ backgroundColor: '#18181b', color: 'white', border: '1px solid #555' }}
                   ref={fileInputRef}
                 />
                 <div className="flex gap-2 mt-2 flex-wrap items-center">
@@ -362,49 +345,38 @@ export default function AdminProduct() {
                       <ImageErrorBoundary fallbackSrc="/images/placeholder.jpg">
                         <Image
                           src={URL.createObjectURL(file)}
-                          alt={`Preview ${idx + 1}`}
+                          alt="preview"
                           width={80}
                           height={80}
-                          className="rounded object-cover"
+                          className="rounded-lg object-cover"
                         />
                       </ImageErrorBoundary>
                       <button
+                        type="button"
                         onClick={() => removeImage(idx)}
-                        className="absolute top-0 right-0 bg-red-600 text-white w-5 h-5 rounded-full flex items-center justify-center -mt-2 -mr-2"
+                        className="absolute top-0 right-0 bg-red-600 text-white w-5 h-5 rounded-full flex items-center justify-center"
                       >
                         ×
                       </button>
                     </div>
                   ))}
-                  {(images.length > 0 && images.length < 4) && (
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="bg-gray-200 text-gray-700 w-20 h-20 rounded flex items-center justify-center hover:bg-gray-300 transition"
-                    >
-                      +
-                    </button>
-                  )}
                 </div>
               </div>
-              <div className="md:col-span-2 flex justify-end gap-4">
+
+              {/* Buttons */}
+              <div className="md:col-span-2 flex justify-end gap-4 mt-4">
                 <button
                   type="button"
-                  onClick={() => {
-                    setShowAddModal(false);
-                    setName('');
-                    setPrice('');
-                    setQuantity('');
-                    setCategoryId('');
-                    setImages([]);
-                  }}
-                  className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400 transition"
+                  onClick={() => setShowAddModal(false)}
+                  className="px-4 py-2 rounded-lg transition"
+                  style={{ backgroundColor: '#555', color: 'white' }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+                  className="px-4 py-2 rounded-lg transition"
+                  style={{ backgroundColor: '#facc15', color: '#000' }}
                 >
                   Add Product
                 </button>
@@ -414,60 +386,50 @@ export default function AdminProduct() {
         </div>
       )}
 
-      {/* Products Table */}
+      {/* Cards */}
       <div className="mt-8">
-        <h2 className="text-xl font-semibold text-gray-700 mb-4">Products</h2>
-        <div className="overflow-x-auto">
-          <table className="min-w-full bg-white border border-gray-200">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="py-3 px-4 border-b text-left text-gray-700 font-semibold">Name</th>
-                <th className="py-3 px-4 border-b text-left text-gray-700 font-semibold">Price</th>
-                <th className="py-3 px-4 border-b text-left text-gray-700 font-semibold">Quantity</th>
-                <th className="py-3 px-4 border-b text-left text-gray-700 font-semibold">Images</th>
-                <th className="py-3 px-4 border-b text-left text-gray-700 font-semibold">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredProducts.map((product) => (
-                <tr key={product.id} className="hover:bg-gray-50">
-                  <td className="py-3 px-4 border-b text-gray-800">{product.name}</td>
-                  <td className="py-3 px-4 border-b text-gray-600">${product.price.toFixed(2)}</td>
-                  <td className="py-3 px-4 border-b text-gray-600">{product.quantity}</td>
-                  <td className="py-3 px-4 border-b">
-                    <div className="flex gap-2 overflow-x-auto">
-                      {product.images.map((img, idx) => (
-                        <ImageErrorBoundary key={idx} fallbackSrc="/images/placeholder.jpg">
-                          <Image
-                            src={img.url}
-                            alt={product.name}
-                            width={50}
-                            height={50}
-                            className="rounded object-cover"
-                            onError={() => toast.error(`Failed to load image: ${img.url}`)}
-                          />
-                        </ImageErrorBoundary>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="py-3 px-4 border-b">
-                    <Link
-                      href={`/admin/products/edits/${product.publicId}`}
-                      className="bg-blue-600 text-white px-2 py-1 rounded mr-2 hover:bg-blue-700 transition-colors text-sm"
-                    >
-                      Edit
-                    </Link>
-                    <button
-                      onClick={() => handleDelete(product.publicId)}
-                      className="bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700 transition-colors text-sm"
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <h2 className="text-xl font-semibold mb-4 text-white">Products</h2>
+        <div className="space-y-4">
+          {filteredProducts.map(product => (
+            <div key={product.id} className="flex items-center justify-between p-4 rounded-lg shadow" style={{ backgroundColor: '#3f3f47' }}>
+              <div className="flex items-center gap-4">
+                <div>
+                  <h3 className="text-white font-semibold">{product.name}</h3>
+                  <p className="text-white">Price: ${product.price.toFixed(2)}</p>
+                  <p className="text-white">Quantity: {product.quantity}</p>
+                </div>
+                <div className="flex gap-2">
+                  {product.images?.map((img, idx) => (
+                    <ImageErrorBoundary key={idx} fallbackSrc="/images/placeholder.jpg">
+                      <Image
+                        src={img.url}
+                        alt={product.name}
+                        width={50}
+                        height={50}
+                        className="rounded-lg object-cover"
+                      />
+                    </ImageErrorBoundary>
+                  ))}
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Link
+                  href={`/admin/products/edits/${product.publicId}`}
+                  className="px-3 py-1 rounded transition text-sm"
+                  style={{ backgroundColor: '#facc15', color: '#000' }}
+                >
+                  Edit
+                </Link>
+                <button
+                  onClick={() => handleDelete(product.publicId)}
+                  className="px-3 py-1 rounded transition text-sm"
+                  style={{ backgroundColor: '#dc2626', color: 'white' }}
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>

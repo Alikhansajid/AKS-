@@ -132,31 +132,40 @@ export default function Categories() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white p-6">
+    <div className="min-h-screen p-6" style={{ backgroundColor: '#18181b' }}>
       <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
-      <h1 className="text-3xl font-bold text-blue-800 mb-6 text-center">Manage Categories</h1>
-      <div className="mb-6">
-        <Link href="/admin/product" className="text-blue-600 hover:text-blue-800 font-semibold">
-          Back to products
+
+      <h1 className="text-3xl font-bold text-yellow-400 mb-6 text-center">
+        Manage Categories
+      </h1>
+
+      <div className="mb-6 text-center">
+        <Link
+          href="/admin/product"
+          className="text-yellow-400 hover:text-yellow-300 font-semibold"
+        >
+          ← Back to products
         </Link>
       </div>
 
       {/* Confirmation Modal */}
       {showConfirmModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
-            <h2 className="text-lg font-semibold text-gray-700 mb-4">Confirm Deletion</h2>
-            <p className="text-gray-600 mb-6">Are you sure you want to delete this category?</p>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="p-6 rounded-xl shadow-lg max-w-sm w-full" style={{ backgroundColor: '#3f3f47' }}>
+            <h2 className="text-lg font-semibold text-white mb-4">Confirm Deletion</h2>
+            <p className="text-gray-300 mb-6">
+              Are you sure you want to delete this category?
+            </p>
             <div className="flex justify-end gap-4">
               <button
                 onClick={handleCancelDelete}
-                className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400 transition"
+                className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition"
               >
                 Cancel
               </button>
               <button
                 onClick={handleConfirmDelete}
-                className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition"
+                className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition"
               >
                 Delete
               </button>
@@ -166,13 +175,14 @@ export default function Categories() {
       )}
 
       {/* Add Category Form */}
-      <div className="bg-white p-6 rounded-lg shadow-lg mb-8">
-        <h2 className="text-xl font-semibold text-gray-700 mb-4">Add Category</h2>
-        <div className="flex gap-4 mb-4">
+      <div className="bg-gray-800 p-6 rounded-xl shadow-lg mb-8">
+        <h2 className="text-xl font-semibold text-yellow-400 mb-4">Add Category</h2>
+        <div className="flex flex-col md:flex-row gap-4 mb-4">
           <select
             value={selectedCategoryId || ''}
             onChange={e => setSelectedCategoryId(e.target.value || null)}
-            className="border p-2 rounded w-1/3 text-gray-700"
+            className="border border-gray-600 rounded-lg p-2 w-full md:w-1/3 text-white focus:outline-none focus:ring-2 focus:ring-yellow-500"
+            style={{ backgroundColor: '#3f3f47' }}
           >
             <option value="">Add to Main Category</option>
             {categories
@@ -187,12 +197,17 @@ export default function Categories() {
             type="text"
             placeholder={selectedCategoryId ? 'New Subcategory Name' : 'New Category Name'}
             value={selectedCategoryId ? newSubcategoryName : newCategoryName}
-            onChange={e => selectedCategoryId ? setNewSubcategoryName(e.target.value) : setNewCategoryName(e.target.value)}
-            className="border p-2 rounded w-1/3 text-gray-700"
+            onChange={e =>
+              selectedCategoryId
+                ? setNewSubcategoryName(e.target.value)
+                : setNewCategoryName(e.target.value)
+            }
+            className="border border-gray-600 rounded-lg p-2 w-full md:w-1/3 text-white focus:outline-none focus:ring-2 focus:ring-yellow-500"
+            style={{ backgroundColor: '#3f3f47' }}
           />
           <button
             onClick={addCategory}
-            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
+            className="bg-yellow-600 text-black px-4 py-2 rounded-lg hover:bg-yellow-700 transition"
           >
             Add Category
           </button>
@@ -200,30 +215,36 @@ export default function Categories() {
       </div>
 
       {/* Categories Table */}
-      <div className="bg-white p-6 rounded-lg shadow-lg">
-        <h2 className="text-xl font-semibold text-gray-700 mb-4">Categories</h2>
+      <div className="bg-gray-800 p-6 rounded-xl shadow-lg">
+        <h2 className="text-xl font-semibold text-yellow-400 mb-4">Categories</h2>
         <div className="overflow-x-auto">
-          <table className="min-w-full bg-white border border-gray-200">
+          <table className="min-w-full bg-gray-700 border border-gray-600 rounded-lg overflow-hidden">
             <thead>
-              <tr className="bg-gray-100">
-                <th className="text-left py-3 px-4 font-semibold text-gray-700 border-b">Name</th>
-                <th className="text-left py-3 px-4 font-semibold text-gray-700 border-b">Parent Category</th>
-                <th className="text-left py-3 px-4 font-semibold text-gray-700 border-b">Actions</th>
+              <tr className="bg-gray-800">
+                <th className="text-left py-3 px-4 font-semibold text-yellow-400 border-b border-gray-600">
+                  Name
+                </th>
+                <th className="text-left py-3 px-4 font-semibold text-yellow-400 border-b border-gray-600">
+                  Parent Category
+                </th>
+                <th className="text-left py-3 px-4 font-semibold text-yellow-400 border-b border-gray-600">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody>
               {categories.map(cat => (
-                <tr key={cat.publicId} className="hover:bg-gray-50">
-                  <td className="py-3 px-4 border-b text-gray-800">
+                <tr key={cat.publicId} className="hover:bg-gray-600">
+                  <td className="py-3 px-4 border-b border-gray-600 text-white">
                     {cat.parentId ? `└─ ${cat.name}` : cat.name}
                   </td>
-                  <td className="py-3 px-4 border-b text-gray-600">
+                  <td className="py-3 px-4 border-b border-gray-600 text-gray-300">
                     {cat.parent ? cat.parent.name : 'None'}
                   </td>
-                  <td className="py-3 px-4 border-b">
+                  <td className="py-3 px-4 border-b border-gray-600">
                     <button
                       onClick={() => openConfirmModal(cat.publicId)}
-                      className="bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700 transition"
+                      className="bg-red-600 text-white px-2 py-1 rounded-lg hover:bg-red-700 transition"
                     >
                       Delete
                     </button>

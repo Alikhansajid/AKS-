@@ -1,216 +1,254 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import useSWR from 'swr';
-import { toast } from 'react-toastify';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { toast } from 'react-toastify';
+
+interface OrderItem {
+  id: number;
+  product: { name: string };
+  quantity: number;
+  price: number;
+}
+
+interface User {
+  id: number;
+  name: string;
+}
 
 interface Order {
   id: number;
   publicId: string;
-  userId: number;
-  user: { name: string; email: string };
+  user: { name: string };
+  rider: User | null;
   status: 'PENDING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
   createdAt: string;
-  updatedAt: string;
-  items: { productId: number; quantity: number; price: number; product: { name: string } }[];
-  payment?: { status: 'PENDING' | 'SUCCESS' | 'FAILED' };
+  items: OrderItem[];
 }
 
-interface ApiResponse {
-  data?: Order[];
-  error?: string;
-}
-
-const fetcher = async (url: string): Promise<Order[]> => {
-  const res = await fetch(url, { credentials: 'include' });
-  const data = await res.json();
-  console.log('API Response for', url, ':', data); // Debug log
-  if (!res.ok) {
-    throw new Error(data.error || data.details || 'Failed to fetch orders');
-  }
-  return Array.isArray(data) ? data : [];
-};
-
-export default function AdminOrders() {
+export default function AdminOrdersPage() {
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [riders, setRiders] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [assigningOrderId, setAssigningOrderId] = useState<number | null>(null);
+  const [selectedRider, setSelectedRider] = useState<number | null>(null);
   const router = useRouter();
-  const { data: orders, error, mutate } = useSWR<Order[], Error, string>('/api/admin/orders', fetcher, {
-    refreshInterval: 5000,
-    revalidateOnFocus: true,
-  });
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const [newStatus, setNewStatus] = useState<'' | 'PENDING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED'>('');
 
   useEffect(() => {
-    async function checkAdmin() {
-      try {
-        const res = await fetch('/api/auth/session', { credentials: 'include' });
-        const data = await res.json();
-        console.log('Session Response:', data); // Debug log
-        if (!data.user || data.user.role !== 'ADMIN') {
-          toast.error('Unauthorized access');
-          router.push('/');
-        }
-      } catch (error) {
-        console.error('Error fetching session:', error);
-        toast.error('Failed to verify session');
-        router.push('/');
-      }
-    }
     checkAdmin();
+    fetchData();
   }, [router]);
 
-  const updateStatus = async (publicId: string) => {
-    if (!newStatus) {
-      toast.error('Please select a status');
-      return;
-    }
-
+  const checkAdmin = async () => {
     try {
-      const res = await fetch(`/api/admin/orders/${publicId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus }),
-        credentials: 'include',
-      });
+      const res = await fetch('/api/auth/session', { credentials: 'include' });
       const data = await res.json();
-      if (res.ok) {
-        toast.success('Order status updated');
-        mutate();
-        setSelectedOrder(null);
-        setNewStatus('');
-      } else {
-        toast.error(data.error || 'Failed to update status');
+      if (!data.user || data.user.role !== 'ADMIN') {
+        toast.error('Unauthorized access');
+        router.push('/');
       }
-    } catch (error) {
-      console.error('Error updating status:', error);
-      toast.error('Something went wrong');
+    } catch {
+      toast.error('Failed to verify session');
+      router.push('/');
     }
   };
 
-  const statusOptions: ('PENDING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED')[] = [
-    'PENDING',
-    'SHIPPED',
-    'DELIVERED',
-    'CANCELLED',
-  ];
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const [ordersRes, ridersRes] = await Promise.all([
+        fetch('/api/admin/orders'),
+        fetch('/api/admin/riders'),
+      ]);
+      if (!ordersRes.ok || !ridersRes.ok) throw new Error('Failed to fetch data');
+      const ordersData = await ordersRes.json();
+      const ridersData = await ridersRes.json();
+      setOrders(ordersData.orders);
+      setRiders(ridersData.riders);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : 'Error loading data');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  if (error) {
-    return <div className="text-center text-red-500">Error: {error.message}</div>;
-  }
+  const assignOrder = async (orderId: number) => {
+    if (!selectedRider) {
+      toast.error('Please select a rider');
+      return;
+    }
+    try {
+      const res = await fetch('/api/admin/orders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId, riderId: selectedRider }),
+      });
+      if (!res.ok) throw new Error('Failed to assign order');
+      toast.success('Order assigned');
+      setSelectedRider(null);
+      setAssigningOrderId(null);
+      await fetchData();
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : 'Error assigning order');
+    }
+  };
 
-  if (!orders) {
-    return <div className="text-center text-gray-500">Loading orders...</div>;
+  const updateOrderStatus = async (
+    orderId: number,
+    status: 'PENDING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED'
+  ) => {
+    try {
+      const res = await fetch('/api/admin/orders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId, status }),
+      });
+      if (!res.ok) throw new Error('Failed to update status');
+      toast.success('Order status updated');
+      await fetchData();
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : 'Error updating status');
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#18181b' }}>
+        <p className="text-gray-400">Loading orders...</p>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white p-6">
-      <h1 className="text-3xl font-bold text-blue-800 mb-6">Manage Orders</h1>
+    <div className="min-h-screen p-6 text-gray-200" style={{ backgroundColor: '#18181b' }}>
+      <h1 className="text-3xl font-bold text-amber-500 mb-6">Manage Orders</h1>
       {orders.length === 0 ? (
-        <div className="text-center text-gray-500">No orders found.</div>
+        <p className="text-center text-gray-400">No orders found.</p>
       ) : (
-        <>
-          <div className="overflow-x-auto bg-white rounded-lg shadow-lg">
-            <table className="min-w-full text-sm text-left text-gray-700">
-              <thead className="bg-blue-600 text-white">
-                <tr>
-                  <th className="py-3 px-4">Order ID</th>
-                  <th className="py-3 px-4">User</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4">Payment Status</th>
-                  <th className="py-3 px-4">Items</th>
-                  <th className="py-3 px-4">Total</th>
-                  <th className="py-3 px-4">Created At</th>
-                  <th className="py-3 px-4">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {orders.map((order) => (
-                  <tr key={order.publicId} className="border-b hover:bg-gray-50">
-                    <td className="py-3 px-4">{order.publicId}</td>
-                    <td className="py-3 px-4">
-                      {order.user.name} ({order.user.email})
-                    </td>
-                    <td className="py-3 px-4">{order.status}</td>
-                    <td className="py-3 px-4">{order.payment?.status || 'N/A'}</td>
-                    <td className="py-3 px-4">
-                      {order.items.map((item, idx) => (
-                        <div key={idx}>
-                          {item.quantity} x {item.product.name} (${item.price.toFixed(2)})
-                        </div>
-                      ))}
-                    </td>
-                    <td className="py-3 px-4">
-                      ${order.items.reduce((sum, item) => sum + item.quantity * item.price, 0).toFixed(2)}
-                    </td>
-                    <td className="py-3 px-4">{new Date(order.createdAt).toLocaleDateString()}</td>
-                    <td className="py-3 px-4">
-                      <button
-                        onClick={() => {
-                          setSelectedOrder(order);
-                          setNewStatus(order.status);
-                        }}
-                        className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 mr-2"
-                      >
-                        Update Status
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        <div className="space-y-4">
+          {orders.map(order => (
+            <div
+              key={order.publicId}
+              className="border border-gray-700 rounded-xl shadow-md p-5"
+              style={{ backgroundColor: '#3f3f47' }}
+            >
+              <div className="flex justify-between items-center border-b border-gray-700 pb-3 mb-3">
+                <div>
+                  <p className="text-sm text-gray-400">Order ID</p>
+                  <p className="font-semibold text-gray-100">{order.publicId}</p>
+                </div>
+                <p className="text-sm text-gray-400">
+                  {new Date(order.createdAt).toLocaleString()}
+                </p>
+              </div>
 
-          {selectedOrder && (
-            <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-                <h2 className="text-xl font-semibold mb-4">Update Order Status</h2>
-                <p className="mb-2">Order ID: {selectedOrder.publicId}</p>
-                <select
-                  value={newStatus}
-                  onChange={(e) =>
-                    setNewStatus(e.target.value as '' | 'PENDING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED')
-                  }
-                  className="w-full p-2 border rounded mb-4"
-                  disabled={selectedOrder.payment?.status === 'SUCCESS' || selectedOrder.status === 'DELIVERED'}
-                >
-                  <option value="">Select Status</option>
-                  {statusOptions.map((status) => (
-                    <option
-                      key={status}
-                      value={status}
-                      disabled={
-                        status === 'CANCELLED' &&
-                        (selectedOrder.payment?.status === 'SUCCESS' || selectedOrder.status === 'DELIVERED')
-                      }
-                    >
-                      {status}
-                    </option>
-                  ))}
-                </select>
-                <div className="flex justify-end gap-4">
-                  <button
-                    onClick={() => {
-                      setSelectedOrder(null);
-                      setNewStatus('');
-                    }}
-                    className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div>
+                  <p className="text-gray-400">Customer</p>
+                  <p className="font-medium">{order.user.name}</p>
+                </div>
+                <div>
+                  <p className="text-gray-400">Status</p>
+                  <p
+                    className={`font-medium ${
+                      order.status === 'PENDING'
+                        ? 'text-amber-400'
+                        : order.status === 'SHIPPED'
+                        ? 'text-blue-400'
+                        : order.status === 'DELIVERED'
+                        ? 'text-green-400'
+                        : 'text-red-400'
+                    }`}
                   >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={() => updateStatus(selectedOrder.publicId)}
-                    className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-                    disabled={selectedOrder.payment?.status === 'SUCCESS' || selectedOrder.status === 'DELIVERED'}
-                  >
-                    Save
-                  </button>
+                    {order.status}
+                  </p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-gray-400">Items</p>
+                  <ul className="list-disc list-inside text-gray-300">
+                    {order.items.map(item => (
+                      <li key={item.id}>
+                        {item.product.name} × {item.quantity} — ${item.price}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               </div>
+
+              <div className="mt-4 flex flex-wrap gap-2 items-center">
+                {order.rider ? (
+                  <>
+                    <span className="px-3 py-1 bg-green-700 text-green-200 rounded-full text-xs font-medium">
+                      Assigned to {order.rider.name}
+                    </span>
+                    {order.status !== 'CANCELLED' && (
+                      <button
+                        onClick={() => updateOrderStatus(order.id, 'CANCELLED')}
+                        className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs"
+                      >
+                        Cancel
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <select
+                      value={assigningOrderId === order.id ? selectedRider || '' : ''}
+                      onChange={(e) => {
+                        setAssigningOrderId(order.id);
+                        setSelectedRider(Number(e.target.value));
+                      }}
+                      className="px-3 py-1 border border-gray-600 bg-gray-900 text-gray-200 rounded text-sm"
+                    >
+                      <option value="">Select Rider</option>
+                      {riders.map(r => (
+                        <option key={r.id} value={r.id}>
+                          {r.name}
+                        </option>
+                      ))}
+                    </select>
+                    {assigningOrderId === order.id && selectedRider && (
+                      <button
+                        onClick={() => assignOrder(order.id)}
+                        className="px-3 py-1 bg-amber-500 text-white rounded hover:bg-amber-600 text-xs"
+                      >
+                        Assign
+                      </button>
+                    )}
+                  </>
+                )}
+
+                {order.status !== 'DELIVERED' &&
+                  order.status !== 'CANCELLED' &&
+                  !order.rider && (
+                    <button
+                      onClick={() => updateOrderStatus(order.id, 'SHIPPED')}
+                      className="px-3 py-1 bg-amber-500 text-white rounded hover:bg-amber-600 text-xs"
+                    >
+                      Mark Shipped
+                    </button>
+                  )}
+
+                {order.status === 'SHIPPED' && (
+                  <button
+                    onClick={() => updateOrderStatus(order.id, 'DELIVERED')}
+                    className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-xs"
+                  >
+                    Mark Delivered
+                  </button>
+                )}
+              </div>
             </div>
-          )}
-        </>
+          ))}
+        </div>
       )}
+
+      <button
+        onClick={() => router.push('/admin')}
+        className="mt-6 w-full py-2 bg-amber-500 text-white rounded hover:bg-amber-600"
+      >
+        Back to Admin
+      </button>
     </div>
   );
 }

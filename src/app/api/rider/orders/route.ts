@@ -22,25 +22,24 @@ export async function GET(req: NextRequest) {
 
     const user = await prisma.user.findUnique({
       where: { publicId: session.user.publicId },
-      select: { role: true },
+      select: { id: true, role: true },
     });
 
-    if (!user || user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    if (!user || user.role !== 'RIDER') {
+      return NextResponse.json({ error: 'User is not a rider' }, { status: 403 });
     }
 
     const orders = await prisma.order.findMany({
-      where: { deletedAt: null },
+      where: { riderId: user.id, deletedAt: null },
       include: {
         user: { select: { name: true } },
-        rider: { select: { id: true, name: true } },
         items: { include: { product: { select: { name: true } } } },
       },
     });
 
     return NextResponse.json({ orders });
   } catch (error) {
-    console.error('Admin orders fetch error:', error);
+    console.error('Rider orders fetch error:', error);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }
@@ -54,54 +53,36 @@ export async function PATCH(req: NextRequest) {
 
     const user = await prisma.user.findUnique({
       where: { publicId: session.user.publicId },
-      select: { role: true },
+      select: { id: true, role: true },
     });
 
-    if (!user || user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    if (!user || user.role !== 'RIDER') {
+      return NextResponse.json({ error: 'User is not a rider' }, { status: 403 });
     }
 
-    const { orderId, riderId, status } = await req.json();
+    const { orderId, status } = await req.json();
 
-    if (!orderId || (!riderId && !status)) {
-      return NextResponse.json({ error: 'Invalid parameters' }, { status: 400 });
+    if (!orderId || !['PENDING', 'SHIPPED', 'DELIVERED', 'CANCELLED'].includes(status)) {
+      return NextResponse.json({ error: 'Invalid order ID or status' }, { status: 400 });
     }
 
     const order = await prisma.order.findUnique({
       where: { id: orderId },
-      select: { id: true },
+      select: { riderId: true },
     });
 
-    if (!order) {
-      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+    if (!order || order.riderId !== user.id) {
+      return NextResponse.json({ error: 'Order not assigned to this rider' }, { status: 403 });
     }
 
-    if (riderId) {
-      const rider = await prisma.user.findUnique({
-        where: { id: riderId },
-        select: { role: true },
-      });
-      if (!rider || rider.role !== 'RIDER') {
-        return NextResponse.json({ error: 'Invalid rider' }, { status: 400 });
-      }
-      await prisma.order.update({
-        where: { id: orderId },
-        data: { riderId },
-      });
-      return NextResponse.json({ message: 'Order assigned successfully' });
-    }
+    await prisma.order.update({
+      where: { id: orderId },
+      data: { status },
+    });
 
-    if (status && ['PENDING', 'SHIPPED', 'DELIVERED', 'CANCELLED'].includes(status)) {
-      await prisma.order.update({
-        where: { id: orderId },
-        data: { status },
-      });
-      return NextResponse.json({ message: 'Order status updated successfully' });
-    }
-
-    return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
+    return NextResponse.json({ message: 'Order status updated successfully' });
   } catch (error) {
-    console.error('Order update error:', error);
+    console.error('Order status update error:', error);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }

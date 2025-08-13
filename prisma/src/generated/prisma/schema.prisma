@@ -36,6 +36,7 @@ model User {
   password   String
   profilePic String?   @map("profile_pic")
   role       Role      @default(CUSTOMER)
+  details    Json?     @map("details")
   createdAt  DateTime  @default(now()) @map("created_at")
   updatedAt  DateTime  @updatedAt @map("updated_at")
   deletedAt  DateTime? @map("deleted_at")
@@ -43,7 +44,8 @@ model User {
   updatedProducts   Product[]  @relation("UpdatedByUser_Product")
   updatedCategories Category[] @relation("UpdatedByUser_Category")
   carts             Cart[]
-  orders            Order[]
+  orders            Order[]    @relation("CustomerOrders")
+  assignedOrders    Order[]    @relation("RiderAssignedOrders")
 
   @@map("user")
 }
@@ -134,12 +136,14 @@ model Order {
   id        Int         @id @default(autoincrement())
   publicId  String      @unique @default(cuid()) @map("public_id")
   userId    Int
+  riderId   Int?        @map("rider_id")
   status    OrderStatus @default(PENDING)
   createdAt DateTime    @default(now()) @map("created_at")
   updatedAt DateTime    @updatedAt @map("updated_at")
   deletedAt DateTime?   @map("deleted_at")
 
-  user    User        @relation(fields: [userId], references: [id])
+  user    User        @relation("CustomerOrders", fields: [userId], references: [id])
+  rider   User?       @relation("RiderAssignedOrders", fields: [riderId], references: [id])
   items   OrderItem[]
   payment Payment?
 

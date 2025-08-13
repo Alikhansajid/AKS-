@@ -121,3 +121,20 @@ export default function RootLayout({
 //if order delivered ststus should remain same (even admin cannot change it )
 //enum(status)
 //admin can manage users (delete and can change role, updated personal info)
+
+
+
+
+
+
+
+//6 aug 2025
+//include or select 
+//when rider login it must add personal details and 
+//in user table add detail col json (nullable) detail of rider 
+
+
+//7 aug 2025
+//ask for specific fields in api (do not ask ID which is primary key)
+//rider can update info (make another object in db)
+//update in database after approval of admin 

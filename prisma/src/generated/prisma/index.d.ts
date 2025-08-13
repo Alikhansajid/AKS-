@@ -1659,6 +1659,7 @@ export namespace Prisma {
     updatedCategories: number
     carts: number
     orders: number
+    assignedOrders: number
   }
 
   export type UserCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -1666,6 +1667,7 @@ export namespace Prisma {
     updatedCategories?: boolean | UserCountOutputTypeCountUpdatedCategoriesArgs
     carts?: boolean | UserCountOutputTypeCountCartsArgs
     orders?: boolean | UserCountOutputTypeCountOrdersArgs
+    assignedOrders?: boolean | UserCountOutputTypeCountAssignedOrdersArgs
   }
 
   // Custom InputTypes
@@ -1704,6 +1706,13 @@ export namespace Prisma {
    * UserCountOutputType without action
    */
   export type UserCountOutputTypeCountOrdersArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: OrderWhereInput
+  }
+
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountAssignedOrdersArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: OrderWhereInput
   }
 
@@ -1920,6 +1929,7 @@ export namespace Prisma {
     password: number
     profilePic: number
     role: number
+    details: number
     createdAt: number
     updatedAt: number
     deletedAt: number
@@ -1972,6 +1982,7 @@ export namespace Prisma {
     password?: true
     profilePic?: true
     role?: true
+    details?: true
     createdAt?: true
     updatedAt?: true
     deletedAt?: true
@@ -2073,6 +2084,7 @@ export namespace Prisma {
     password: string
     profilePic: string | null
     role: $Enums.Role
+    details: JsonValue | null
     createdAt: Date
     updatedAt: Date
     deletedAt: Date | null
@@ -2106,6 +2118,7 @@ export namespace Prisma {
     password?: boolean
     profilePic?: boolean
     role?: boolean
+    details?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     deletedAt?: boolean
@@ -2113,6 +2126,7 @@ export namespace Prisma {
     updatedCategories?: boolean | User$updatedCategoriesArgs<ExtArgs>
     carts?: boolean | User$cartsArgs<ExtArgs>
     orders?: boolean | User$ordersArgs<ExtArgs>
+    assignedOrders?: boolean | User$assignedOrdersArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["user"]>
 
@@ -2125,6 +2139,7 @@ export namespace Prisma {
     password?: boolean
     profilePic?: boolean
     role?: boolean
+    details?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     deletedAt?: boolean
@@ -2139,6 +2154,7 @@ export namespace Prisma {
     password?: boolean
     profilePic?: boolean
     role?: boolean
+    details?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     deletedAt?: boolean
@@ -2153,17 +2169,19 @@ export namespace Prisma {
     password?: boolean
     profilePic?: boolean
     role?: boolean
+    details?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     deletedAt?: boolean
   }
 
-  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "publicId" | "name" | "email" | "phone" | "password" | "profilePic" | "role" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["user"]>
+  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "publicId" | "name" | "email" | "phone" | "password" | "profilePic" | "role" | "details" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["user"]>
   export type UserInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     updatedProducts?: boolean | User$updatedProductsArgs<ExtArgs>
     updatedCategories?: boolean | User$updatedCategoriesArgs<ExtArgs>
     carts?: boolean | User$cartsArgs<ExtArgs>
     orders?: boolean | User$ordersArgs<ExtArgs>
+    assignedOrders?: boolean | User$assignedOrdersArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type UserIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
@@ -2176,6 +2194,7 @@ export namespace Prisma {
       updatedCategories: Prisma.$CategoryPayload<ExtArgs>[]
       carts: Prisma.$CartPayload<ExtArgs>[]
       orders: Prisma.$OrderPayload<ExtArgs>[]
+      assignedOrders: Prisma.$OrderPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: number
@@ -2186,6 +2205,7 @@ export namespace Prisma {
       password: string
       profilePic: string | null
       role: $Enums.Role
+      details: Prisma.JsonValue | null
       createdAt: Date
       updatedAt: Date
       deletedAt: Date | null
@@ -2587,6 +2607,7 @@ export namespace Prisma {
     updatedCategories<T extends User$updatedCategoriesArgs<ExtArgs> = {}>(args?: Subset<T, User$updatedCategoriesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CategoryPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     carts<T extends User$cartsArgs<ExtArgs> = {}>(args?: Subset<T, User$cartsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CartPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     orders<T extends User$ordersArgs<ExtArgs> = {}>(args?: Subset<T, User$ordersArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OrderPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    assignedOrders<T extends User$assignedOrdersArgs<ExtArgs> = {}>(args?: Subset<T, User$assignedOrdersArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OrderPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2624,6 +2645,7 @@ export namespace Prisma {
     readonly password: FieldRef<"User", 'String'>
     readonly profilePic: FieldRef<"User", 'String'>
     readonly role: FieldRef<"User", 'Role'>
+    readonly details: FieldRef<"User", 'Json'>
     readonly createdAt: FieldRef<"User", 'DateTime'>
     readonly updatedAt: FieldRef<"User", 'DateTime'>
     readonly deletedAt: FieldRef<"User", 'DateTime'>
@@ -3090,6 +3112,30 @@ export namespace Prisma {
    * User.orders
    */
   export type User$ordersArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Order
+     */
+    select?: OrderSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Order
+     */
+    omit?: OrderOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OrderInclude<ExtArgs> | null
+    where?: OrderWhereInput
+    orderBy?: OrderOrderByWithRelationInput | OrderOrderByWithRelationInput[]
+    cursor?: OrderWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: OrderScalarFieldEnum | OrderScalarFieldEnum[]
+  }
+
+  /**
+   * User.assignedOrders
+   */
+  export type User$assignedOrdersArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
      * Select specific fields to fetch from the Order
      */
@@ -9072,17 +9118,20 @@ export namespace Prisma {
   export type OrderAvgAggregateOutputType = {
     id: number | null
     userId: number | null
+    riderId: number | null
   }
 
   export type OrderSumAggregateOutputType = {
     id: number | null
     userId: number | null
+    riderId: number | null
   }
 
   export type OrderMinAggregateOutputType = {
     id: number | null
     publicId: string | null
     userId: number | null
+    riderId: number | null
     status: $Enums.OrderStatus | null
     createdAt: Date | null
     updatedAt: Date | null
@@ -9093,6 +9142,7 @@ export namespace Prisma {
     id: number | null
     publicId: string | null
     userId: number | null
+    riderId: number | null
     status: $Enums.OrderStatus | null
     createdAt: Date | null
     updatedAt: Date | null
@@ -9103,6 +9153,7 @@ export namespace Prisma {
     id: number
     publicId: number
     userId: number
+    riderId: number
     status: number
     createdAt: number
     updatedAt: number
@@ -9114,17 +9165,20 @@ export namespace Prisma {
   export type OrderAvgAggregateInputType = {
     id?: true
     userId?: true
+    riderId?: true
   }
 
   export type OrderSumAggregateInputType = {
     id?: true
     userId?: true
+    riderId?: true
   }
 
   export type OrderMinAggregateInputType = {
     id?: true
     publicId?: true
     userId?: true
+    riderId?: true
     status?: true
     createdAt?: true
     updatedAt?: true
@@ -9135,6 +9189,7 @@ export namespace Prisma {
     id?: true
     publicId?: true
     userId?: true
+    riderId?: true
     status?: true
     createdAt?: true
     updatedAt?: true
@@ -9145,6 +9200,7 @@ export namespace Prisma {
     id?: true
     publicId?: true
     userId?: true
+    riderId?: true
     status?: true
     createdAt?: true
     updatedAt?: true
@@ -9242,6 +9298,7 @@ export namespace Prisma {
     id: number
     publicId: string
     userId: number
+    riderId: number | null
     status: $Enums.OrderStatus
     createdAt: Date
     updatedAt: Date
@@ -9271,11 +9328,13 @@ export namespace Prisma {
     id?: boolean
     publicId?: boolean
     userId?: boolean
+    riderId?: boolean
     status?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     deletedAt?: boolean
     user?: boolean | UserDefaultArgs<ExtArgs>
+    rider?: boolean | Order$riderArgs<ExtArgs>
     items?: boolean | Order$itemsArgs<ExtArgs>
     payment?: boolean | Order$paymentArgs<ExtArgs>
     _count?: boolean | OrderCountOutputTypeDefaultArgs<ExtArgs>
@@ -9285,52 +9344,61 @@ export namespace Prisma {
     id?: boolean
     publicId?: boolean
     userId?: boolean
+    riderId?: boolean
     status?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     deletedAt?: boolean
     user?: boolean | UserDefaultArgs<ExtArgs>
+    rider?: boolean | Order$riderArgs<ExtArgs>
   }, ExtArgs["result"]["order"]>
 
   export type OrderSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     publicId?: boolean
     userId?: boolean
+    riderId?: boolean
     status?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     deletedAt?: boolean
     user?: boolean | UserDefaultArgs<ExtArgs>
+    rider?: boolean | Order$riderArgs<ExtArgs>
   }, ExtArgs["result"]["order"]>
 
   export type OrderSelectScalar = {
     id?: boolean
     publicId?: boolean
     userId?: boolean
+    riderId?: boolean
     status?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     deletedAt?: boolean
   }
 
-  export type OrderOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "publicId" | "userId" | "status" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["order"]>
+  export type OrderOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "publicId" | "userId" | "riderId" | "status" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["order"]>
   export type OrderInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     user?: boolean | UserDefaultArgs<ExtArgs>
+    rider?: boolean | Order$riderArgs<ExtArgs>
     items?: boolean | Order$itemsArgs<ExtArgs>
     payment?: boolean | Order$paymentArgs<ExtArgs>
     _count?: boolean | OrderCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type OrderIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     user?: boolean | UserDefaultArgs<ExtArgs>
+    rider?: boolean | Order$riderArgs<ExtArgs>
   }
   export type OrderIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     user?: boolean | UserDefaultArgs<ExtArgs>
+    rider?: boolean | Order$riderArgs<ExtArgs>
   }
 
   export type $OrderPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "Order"
     objects: {
       user: Prisma.$UserPayload<ExtArgs>
+      rider: Prisma.$UserPayload<ExtArgs> | null
       items: Prisma.$OrderItemPayload<ExtArgs>[]
       payment: Prisma.$PaymentPayload<ExtArgs> | null
     }
@@ -9338,6 +9406,7 @@ export namespace Prisma {
       id: number
       publicId: string
       userId: number
+      riderId: number | null
       status: $Enums.OrderStatus
       createdAt: Date
       updatedAt: Date
@@ -9737,6 +9806,7 @@ export namespace Prisma {
   export interface Prisma__OrderClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
     user<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    rider<T extends Order$riderArgs<ExtArgs> = {}>(args?: Subset<T, Order$riderArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     items<T extends Order$itemsArgs<ExtArgs> = {}>(args?: Subset<T, Order$itemsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OrderItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     payment<T extends Order$paymentArgs<ExtArgs> = {}>(args?: Subset<T, Order$paymentArgs<ExtArgs>>): Prisma__PaymentClient<$Result.GetResult<Prisma.$PaymentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     /**
@@ -9771,6 +9841,7 @@ export namespace Prisma {
     readonly id: FieldRef<"Order", 'Int'>
     readonly publicId: FieldRef<"Order", 'String'>
     readonly userId: FieldRef<"Order", 'Int'>
+    readonly riderId: FieldRef<"Order", 'Int'>
     readonly status: FieldRef<"Order", 'OrderStatus'>
     readonly createdAt: FieldRef<"Order", 'DateTime'>
     readonly updatedAt: FieldRef<"Order", 'DateTime'>
@@ -10168,6 +10239,25 @@ export namespace Prisma {
      * Limit how many Orders to delete.
      */
     limit?: number
+  }
+
+  /**
+   * Order.rider
+   */
+  export type Order$riderArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the User
+     */
+    select?: UserSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the User
+     */
+    omit?: UserOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserInclude<ExtArgs> | null
+    where?: UserWhereInput
   }
 
   /**
@@ -12519,6 +12609,7 @@ export namespace Prisma {
     password: 'password',
     profilePic: 'profilePic',
     role: 'role',
+    details: 'details',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt',
     deletedAt: 'deletedAt'
@@ -12599,6 +12690,7 @@ export namespace Prisma {
     id: 'id',
     publicId: 'publicId',
     userId: 'userId',
+    riderId: 'riderId',
     status: 'status',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt',
@@ -12642,12 +12734,29 @@ export namespace Prisma {
   export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
 
 
+  export const NullableJsonNullValueInput: {
+    DbNull: typeof DbNull,
+    JsonNull: typeof JsonNull
+  };
+
+  export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
+
+
   export const QueryMode: {
     default: 'default',
     insensitive: 'insensitive'
   };
 
   export type QueryMode = (typeof QueryMode)[keyof typeof QueryMode]
+
+
+  export const JsonNullValueFilter: {
+    DbNull: typeof DbNull,
+    JsonNull: typeof JsonNull,
+    AnyNull: typeof AnyNull
+  };
+
+  export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter]
 
 
   export const NullsOrder: {
@@ -12702,6 +12811,20 @@ export namespace Prisma {
    * Reference to a field of type 'Role[]'
    */
   export type ListEnumRoleFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Role[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'Json'
+   */
+  export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Json'>
+    
+
+
+  /**
+   * Reference to a field of type 'QueryMode'
+   */
+  export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
     
 
 
@@ -12776,6 +12899,7 @@ export namespace Prisma {
     password?: StringFilter<"User"> | string
     profilePic?: StringNullableFilter<"User"> | string | null
     role?: EnumRoleFilter<"User"> | $Enums.Role
+    details?: JsonNullableFilter<"User">
     createdAt?: DateTimeFilter<"User"> | Date | string
     updatedAt?: DateTimeFilter<"User"> | Date | string
     deletedAt?: DateTimeNullableFilter<"User"> | Date | string | null
@@ -12783,6 +12907,7 @@ export namespace Prisma {
     updatedCategories?: CategoryListRelationFilter
     carts?: CartListRelationFilter
     orders?: OrderListRelationFilter
+    assignedOrders?: OrderListRelationFilter
   }
 
   export type UserOrderByWithRelationInput = {
@@ -12794,6 +12919,7 @@ export namespace Prisma {
     password?: SortOrder
     profilePic?: SortOrderInput | SortOrder
     role?: SortOrder
+    details?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     deletedAt?: SortOrderInput | SortOrder
@@ -12801,6 +12927,7 @@ export namespace Prisma {
     updatedCategories?: CategoryOrderByRelationAggregateInput
     carts?: CartOrderByRelationAggregateInput
     orders?: OrderOrderByRelationAggregateInput
+    assignedOrders?: OrderOrderByRelationAggregateInput
   }
 
   export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -12815,6 +12942,7 @@ export namespace Prisma {
     password?: StringFilter<"User"> | string
     profilePic?: StringNullableFilter<"User"> | string | null
     role?: EnumRoleFilter<"User"> | $Enums.Role
+    details?: JsonNullableFilter<"User">
     createdAt?: DateTimeFilter<"User"> | Date | string
     updatedAt?: DateTimeFilter<"User"> | Date | string
     deletedAt?: DateTimeNullableFilter<"User"> | Date | string | null
@@ -12822,6 +12950,7 @@ export namespace Prisma {
     updatedCategories?: CategoryListRelationFilter
     carts?: CartListRelationFilter
     orders?: OrderListRelationFilter
+    assignedOrders?: OrderListRelationFilter
   }, "id" | "publicId" | "email">
 
   export type UserOrderByWithAggregationInput = {
@@ -12833,6 +12962,7 @@ export namespace Prisma {
     password?: SortOrder
     profilePic?: SortOrderInput | SortOrder
     role?: SortOrder
+    details?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     deletedAt?: SortOrderInput | SortOrder
@@ -12855,6 +12985,7 @@ export namespace Prisma {
     password?: StringWithAggregatesFilter<"User"> | string
     profilePic?: StringNullableWithAggregatesFilter<"User"> | string | null
     role?: EnumRoleWithAggregatesFilter<"User"> | $Enums.Role
+    details?: JsonNullableWithAggregatesFilter<"User">
     createdAt?: DateTimeWithAggregatesFilter<"User"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"User"> | Date | string
     deletedAt?: DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
@@ -13244,11 +13375,13 @@ export namespace Prisma {
     id?: IntFilter<"Order"> | number
     publicId?: StringFilter<"Order"> | string
     userId?: IntFilter<"Order"> | number
+    riderId?: IntNullableFilter<"Order"> | number | null
     status?: EnumOrderStatusFilter<"Order"> | $Enums.OrderStatus
     createdAt?: DateTimeFilter<"Order"> | Date | string
     updatedAt?: DateTimeFilter<"Order"> | Date | string
     deletedAt?: DateTimeNullableFilter<"Order"> | Date | string | null
     user?: XOR<UserScalarRelationFilter, UserWhereInput>
+    rider?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
     items?: OrderItemListRelationFilter
     payment?: XOR<PaymentNullableScalarRelationFilter, PaymentWhereInput> | null
   }
@@ -13257,11 +13390,13 @@ export namespace Prisma {
     id?: SortOrder
     publicId?: SortOrder
     userId?: SortOrder
+    riderId?: SortOrderInput | SortOrder
     status?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     deletedAt?: SortOrderInput | SortOrder
     user?: UserOrderByWithRelationInput
+    rider?: UserOrderByWithRelationInput
     items?: OrderItemOrderByRelationAggregateInput
     payment?: PaymentOrderByWithRelationInput
   }
@@ -13273,11 +13408,13 @@ export namespace Prisma {
     OR?: OrderWhereInput[]
     NOT?: OrderWhereInput | OrderWhereInput[]
     userId?: IntFilter<"Order"> | number
+    riderId?: IntNullableFilter<"Order"> | number | null
     status?: EnumOrderStatusFilter<"Order"> | $Enums.OrderStatus
     createdAt?: DateTimeFilter<"Order"> | Date | string
     updatedAt?: DateTimeFilter<"Order"> | Date | string
     deletedAt?: DateTimeNullableFilter<"Order"> | Date | string | null
     user?: XOR<UserScalarRelationFilter, UserWhereInput>
+    rider?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
     items?: OrderItemListRelationFilter
     payment?: XOR<PaymentNullableScalarRelationFilter, PaymentWhereInput> | null
   }, "id" | "publicId">
@@ -13286,6 +13423,7 @@ export namespace Prisma {
     id?: SortOrder
     publicId?: SortOrder
     userId?: SortOrder
+    riderId?: SortOrderInput | SortOrder
     status?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -13304,6 +13442,7 @@ export namespace Prisma {
     id?: IntWithAggregatesFilter<"Order"> | number
     publicId?: StringWithAggregatesFilter<"Order"> | string
     userId?: IntWithAggregatesFilter<"Order"> | number
+    riderId?: IntNullableWithAggregatesFilter<"Order"> | number | null
     status?: EnumOrderStatusWithAggregatesFilter<"Order"> | $Enums.OrderStatus
     createdAt?: DateTimeWithAggregatesFilter<"Order"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"Order"> | Date | string
@@ -13455,6 +13594,7 @@ export namespace Prisma {
     password: string
     profilePic?: string | null
     role?: $Enums.Role
+    details?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
     deletedAt?: Date | string | null
@@ -13462,6 +13602,7 @@ export namespace Prisma {
     updatedCategories?: CategoryCreateNestedManyWithoutUpdatedByInput
     carts?: CartCreateNestedManyWithoutUserInput
     orders?: OrderCreateNestedManyWithoutUserInput
+    assignedOrders?: OrderCreateNestedManyWithoutRiderInput
   }
 
   export type UserUncheckedCreateInput = {
@@ -13473,6 +13614,7 @@ export namespace Prisma {
     password: string
     profilePic?: string | null
     role?: $Enums.Role
+    details?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
     deletedAt?: Date | string | null
@@ -13480,6 +13622,7 @@ export namespace Prisma {
     updatedCategories?: CategoryUncheckedCreateNestedManyWithoutUpdatedByInput
     carts?: CartUncheckedCreateNestedManyWithoutUserInput
     orders?: OrderUncheckedCreateNestedManyWithoutUserInput
+    assignedOrders?: OrderUncheckedCreateNestedManyWithoutRiderInput
   }
 
   export type UserUpdateInput = {
@@ -13490,6 +13633,7 @@ export namespace Prisma {
     password?: StringFieldUpdateOperationsInput | string
     profilePic?: NullableStringFieldUpdateOperationsInput | string | null
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    details?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -13497,6 +13641,7 @@ export namespace Prisma {
     updatedCategories?: CategoryUpdateManyWithoutUpdatedByNestedInput
     carts?: CartUpdateManyWithoutUserNestedInput
     orders?: OrderUpdateManyWithoutUserNestedInput
+    assignedOrders?: OrderUpdateManyWithoutRiderNestedInput
   }
 
   export type UserUncheckedUpdateInput = {
@@ -13508,6 +13653,7 @@ export namespace Prisma {
     password?: StringFieldUpdateOperationsInput | string
     profilePic?: NullableStringFieldUpdateOperationsInput | string | null
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    details?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -13515,6 +13661,7 @@ export namespace Prisma {
     updatedCategories?: CategoryUncheckedUpdateManyWithoutUpdatedByNestedInput
     carts?: CartUncheckedUpdateManyWithoutUserNestedInput
     orders?: OrderUncheckedUpdateManyWithoutUserNestedInput
+    assignedOrders?: OrderUncheckedUpdateManyWithoutRiderNestedInput
   }
 
   export type UserCreateManyInput = {
@@ -13526,6 +13673,7 @@ export namespace Prisma {
     password: string
     profilePic?: string | null
     role?: $Enums.Role
+    details?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
     deletedAt?: Date | string | null
@@ -13539,6 +13687,7 @@ export namespace Prisma {
     password?: StringFieldUpdateOperationsInput | string
     profilePic?: NullableStringFieldUpdateOperationsInput | string | null
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    details?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -13553,6 +13702,7 @@ export namespace Prisma {
     password?: StringFieldUpdateOperationsInput | string
     profilePic?: NullableStringFieldUpdateOperationsInput | string | null
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    details?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -13937,6 +14087,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     deletedAt?: Date | string | null
     user: UserCreateNestedOneWithoutOrdersInput
+    rider?: UserCreateNestedOneWithoutAssignedOrdersInput
     items?: OrderItemCreateNestedManyWithoutOrderInput
     payment?: PaymentCreateNestedOneWithoutOrderInput
   }
@@ -13945,6 +14096,7 @@ export namespace Prisma {
     id?: number
     publicId?: string
     userId: number
+    riderId?: number | null
     status?: $Enums.OrderStatus
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -13960,6 +14112,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     user?: UserUpdateOneRequiredWithoutOrdersNestedInput
+    rider?: UserUpdateOneWithoutAssignedOrdersNestedInput
     items?: OrderItemUpdateManyWithoutOrderNestedInput
     payment?: PaymentUpdateOneWithoutOrderNestedInput
   }
@@ -13968,6 +14121,7 @@ export namespace Prisma {
     id?: IntFieldUpdateOperationsInput | number
     publicId?: StringFieldUpdateOperationsInput | string
     userId?: IntFieldUpdateOperationsInput | number
+    riderId?: NullableIntFieldUpdateOperationsInput | number | null
     status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -13980,6 +14134,7 @@ export namespace Prisma {
     id?: number
     publicId?: string
     userId: number
+    riderId?: number | null
     status?: $Enums.OrderStatus
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -13998,6 +14153,7 @@ export namespace Prisma {
     id?: IntFieldUpdateOperationsInput | number
     publicId?: StringFieldUpdateOperationsInput | string
     userId?: IntFieldUpdateOperationsInput | number
+    riderId?: NullableIntFieldUpdateOperationsInput | number | null
     status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -14182,6 +14338,29 @@ export namespace Prisma {
     notIn?: $Enums.Role[] | ListEnumRoleFieldRefInput<$PrismaModel>
     not?: NestedEnumRoleFilter<$PrismaModel> | $Enums.Role
   }
+  export type JsonNullableFilter<$PrismaModel = never> =
+    | PatchUndefined<
+        Either<Required<JsonNullableFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonNullableFilterBase<$PrismaModel>>, 'path'>>,
+        Required<JsonNullableFilterBase<$PrismaModel>>
+      >
+    | OptionalFlat<Omit<Required<JsonNullableFilterBase<$PrismaModel>>, 'path'>>
+
+  export type JsonNullableFilterBase<$PrismaModel = never> = {
+    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    path?: string[]
+    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
+    string_contains?: string | StringFieldRefInput<$PrismaModel>
+    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
+    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
+    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+  }
 
   export type DateTimeFilter<$PrismaModel = never> = {
     equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
@@ -14259,6 +14438,7 @@ export namespace Prisma {
     password?: SortOrder
     profilePic?: SortOrder
     role?: SortOrder
+    details?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     deletedAt?: SortOrder
@@ -14360,6 +14540,32 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumRoleFilter<$PrismaModel>
     _max?: NestedEnumRoleFilter<$PrismaModel>
+  }
+  export type JsonNullableWithAggregatesFilter<$PrismaModel = never> =
+    | PatchUndefined<
+        Either<Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, 'path'>>,
+        Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>
+      >
+    | OptionalFlat<Omit<Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, 'path'>>
+
+  export type JsonNullableWithAggregatesFilterBase<$PrismaModel = never> = {
+    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    path?: string[]
+    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
+    string_contains?: string | StringFieldRefInput<$PrismaModel>
+    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
+    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
+    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedJsonNullableFilter<$PrismaModel>
+    _max?: NestedJsonNullableFilter<$PrismaModel>
   }
 
   export type DateTimeWithAggregatesFilter<$PrismaModel = never> = {
@@ -14741,6 +14947,7 @@ export namespace Prisma {
     id?: SortOrder
     publicId?: SortOrder
     userId?: SortOrder
+    riderId?: SortOrder
     status?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -14750,12 +14957,14 @@ export namespace Prisma {
   export type OrderAvgOrderByAggregateInput = {
     id?: SortOrder
     userId?: SortOrder
+    riderId?: SortOrder
   }
 
   export type OrderMaxOrderByAggregateInput = {
     id?: SortOrder
     publicId?: SortOrder
     userId?: SortOrder
+    riderId?: SortOrder
     status?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -14766,6 +14975,7 @@ export namespace Prisma {
     id?: SortOrder
     publicId?: SortOrder
     userId?: SortOrder
+    riderId?: SortOrder
     status?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -14775,6 +14985,7 @@ export namespace Prisma {
   export type OrderSumOrderByAggregateInput = {
     id?: SortOrder
     userId?: SortOrder
+    riderId?: SortOrder
   }
 
   export type EnumOrderStatusWithAggregatesFilter<$PrismaModel = never> = {
@@ -14923,6 +15134,13 @@ export namespace Prisma {
     connect?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
   }
 
+  export type OrderCreateNestedManyWithoutRiderInput = {
+    create?: XOR<OrderCreateWithoutRiderInput, OrderUncheckedCreateWithoutRiderInput> | OrderCreateWithoutRiderInput[] | OrderUncheckedCreateWithoutRiderInput[]
+    connectOrCreate?: OrderCreateOrConnectWithoutRiderInput | OrderCreateOrConnectWithoutRiderInput[]
+    createMany?: OrderCreateManyRiderInputEnvelope
+    connect?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
+  }
+
   export type ProductUncheckedCreateNestedManyWithoutUpdatedByInput = {
     create?: XOR<ProductCreateWithoutUpdatedByInput, ProductUncheckedCreateWithoutUpdatedByInput> | ProductCreateWithoutUpdatedByInput[] | ProductUncheckedCreateWithoutUpdatedByInput[]
     connectOrCreate?: ProductCreateOrConnectWithoutUpdatedByInput | ProductCreateOrConnectWithoutUpdatedByInput[]
@@ -14948,6 +15166,13 @@ export namespace Prisma {
     create?: XOR<OrderCreateWithoutUserInput, OrderUncheckedCreateWithoutUserInput> | OrderCreateWithoutUserInput[] | OrderUncheckedCreateWithoutUserInput[]
     connectOrCreate?: OrderCreateOrConnectWithoutUserInput | OrderCreateOrConnectWithoutUserInput[]
     createMany?: OrderCreateManyUserInputEnvelope
+    connect?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
+  }
+
+  export type OrderUncheckedCreateNestedManyWithoutRiderInput = {
+    create?: XOR<OrderCreateWithoutRiderInput, OrderUncheckedCreateWithoutRiderInput> | OrderCreateWithoutRiderInput[] | OrderUncheckedCreateWithoutRiderInput[]
+    connectOrCreate?: OrderCreateOrConnectWithoutRiderInput | OrderCreateOrConnectWithoutRiderInput[]
+    createMany?: OrderCreateManyRiderInputEnvelope
     connect?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
   }
 
@@ -15027,6 +15252,20 @@ export namespace Prisma {
     deleteMany?: OrderScalarWhereInput | OrderScalarWhereInput[]
   }
 
+  export type OrderUpdateManyWithoutRiderNestedInput = {
+    create?: XOR<OrderCreateWithoutRiderInput, OrderUncheckedCreateWithoutRiderInput> | OrderCreateWithoutRiderInput[] | OrderUncheckedCreateWithoutRiderInput[]
+    connectOrCreate?: OrderCreateOrConnectWithoutRiderInput | OrderCreateOrConnectWithoutRiderInput[]
+    upsert?: OrderUpsertWithWhereUniqueWithoutRiderInput | OrderUpsertWithWhereUniqueWithoutRiderInput[]
+    createMany?: OrderCreateManyRiderInputEnvelope
+    set?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
+    disconnect?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
+    delete?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
+    connect?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
+    update?: OrderUpdateWithWhereUniqueWithoutRiderInput | OrderUpdateWithWhereUniqueWithoutRiderInput[]
+    updateMany?: OrderUpdateManyWithWhereWithoutRiderInput | OrderUpdateManyWithWhereWithoutRiderInput[]
+    deleteMany?: OrderScalarWhereInput | OrderScalarWhereInput[]
+  }
+
   export type IntFieldUpdateOperationsInput = {
     set?: number
     increment?: number
@@ -15088,6 +15327,20 @@ export namespace Prisma {
     connect?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
     update?: OrderUpdateWithWhereUniqueWithoutUserInput | OrderUpdateWithWhereUniqueWithoutUserInput[]
     updateMany?: OrderUpdateManyWithWhereWithoutUserInput | OrderUpdateManyWithWhereWithoutUserInput[]
+    deleteMany?: OrderScalarWhereInput | OrderScalarWhereInput[]
+  }
+
+  export type OrderUncheckedUpdateManyWithoutRiderNestedInput = {
+    create?: XOR<OrderCreateWithoutRiderInput, OrderUncheckedCreateWithoutRiderInput> | OrderCreateWithoutRiderInput[] | OrderUncheckedCreateWithoutRiderInput[]
+    connectOrCreate?: OrderCreateOrConnectWithoutRiderInput | OrderCreateOrConnectWithoutRiderInput[]
+    upsert?: OrderUpsertWithWhereUniqueWithoutRiderInput | OrderUpsertWithWhereUniqueWithoutRiderInput[]
+    createMany?: OrderCreateManyRiderInputEnvelope
+    set?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
+    disconnect?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
+    delete?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
+    connect?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
+    update?: OrderUpdateWithWhereUniqueWithoutRiderInput | OrderUpdateWithWhereUniqueWithoutRiderInput[]
+    updateMany?: OrderUpdateManyWithWhereWithoutRiderInput | OrderUpdateManyWithWhereWithoutRiderInput[]
     deleteMany?: OrderScalarWhereInput | OrderScalarWhereInput[]
   }
 
@@ -15483,6 +15736,12 @@ export namespace Prisma {
     connect?: UserWhereUniqueInput
   }
 
+  export type UserCreateNestedOneWithoutAssignedOrdersInput = {
+    create?: XOR<UserCreateWithoutAssignedOrdersInput, UserUncheckedCreateWithoutAssignedOrdersInput>
+    connectOrCreate?: UserCreateOrConnectWithoutAssignedOrdersInput
+    connect?: UserWhereUniqueInput
+  }
+
   export type OrderItemCreateNestedManyWithoutOrderInput = {
     create?: XOR<OrderItemCreateWithoutOrderInput, OrderItemUncheckedCreateWithoutOrderInput> | OrderItemCreateWithoutOrderInput[] | OrderItemUncheckedCreateWithoutOrderInput[]
     connectOrCreate?: OrderItemCreateOrConnectWithoutOrderInput | OrderItemCreateOrConnectWithoutOrderInput[]
@@ -15519,6 +15778,16 @@ export namespace Prisma {
     upsert?: UserUpsertWithoutOrdersInput
     connect?: UserWhereUniqueInput
     update?: XOR<XOR<UserUpdateToOneWithWhereWithoutOrdersInput, UserUpdateWithoutOrdersInput>, UserUncheckedUpdateWithoutOrdersInput>
+  }
+
+  export type UserUpdateOneWithoutAssignedOrdersNestedInput = {
+    create?: XOR<UserCreateWithoutAssignedOrdersInput, UserUncheckedCreateWithoutAssignedOrdersInput>
+    connectOrCreate?: UserCreateOrConnectWithoutAssignedOrdersInput
+    upsert?: UserUpsertWithoutAssignedOrdersInput
+    disconnect?: UserWhereInput | boolean
+    delete?: UserWhereInput | boolean
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutAssignedOrdersInput, UserUpdateWithoutAssignedOrdersInput>, UserUncheckedUpdateWithoutAssignedOrdersInput>
   }
 
   export type OrderItemUpdateManyWithoutOrderNestedInput = {
@@ -15764,6 +16033,29 @@ export namespace Prisma {
     _min?: NestedEnumRoleFilter<$PrismaModel>
     _max?: NestedEnumRoleFilter<$PrismaModel>
   }
+  export type NestedJsonNullableFilter<$PrismaModel = never> =
+    | PatchUndefined<
+        Either<Required<NestedJsonNullableFilterBase<$PrismaModel>>, Exclude<keyof Required<NestedJsonNullableFilterBase<$PrismaModel>>, 'path'>>,
+        Required<NestedJsonNullableFilterBase<$PrismaModel>>
+      >
+    | OptionalFlat<Omit<Required<NestedJsonNullableFilterBase<$PrismaModel>>, 'path'>>
+
+  export type NestedJsonNullableFilterBase<$PrismaModel = never> = {
+    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    path?: string[]
+    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
+    string_contains?: string | StringFieldRefInput<$PrismaModel>
+    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
+    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
+    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+  }
 
   export type NestedDateTimeWithAggregatesFilter<$PrismaModel = never> = {
     equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
@@ -15979,6 +16271,7 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     deletedAt?: Date | string | null
+    rider?: UserCreateNestedOneWithoutAssignedOrdersInput
     items?: OrderItemCreateNestedManyWithoutOrderInput
     payment?: PaymentCreateNestedOneWithoutOrderInput
   }
@@ -15986,6 +16279,7 @@ export namespace Prisma {
   export type OrderUncheckedCreateWithoutUserInput = {
     id?: number
     publicId?: string
+    riderId?: number | null
     status?: $Enums.OrderStatus
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -16001,6 +16295,39 @@ export namespace Prisma {
 
   export type OrderCreateManyUserInputEnvelope = {
     data: OrderCreateManyUserInput | OrderCreateManyUserInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type OrderCreateWithoutRiderInput = {
+    publicId?: string
+    status?: $Enums.OrderStatus
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    deletedAt?: Date | string | null
+    user: UserCreateNestedOneWithoutOrdersInput
+    items?: OrderItemCreateNestedManyWithoutOrderInput
+    payment?: PaymentCreateNestedOneWithoutOrderInput
+  }
+
+  export type OrderUncheckedCreateWithoutRiderInput = {
+    id?: number
+    publicId?: string
+    userId: number
+    status?: $Enums.OrderStatus
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    deletedAt?: Date | string | null
+    items?: OrderItemUncheckedCreateNestedManyWithoutOrderInput
+    payment?: PaymentUncheckedCreateNestedOneWithoutOrderInput
+  }
+
+  export type OrderCreateOrConnectWithoutRiderInput = {
+    where: OrderWhereUniqueInput
+    create: XOR<OrderCreateWithoutRiderInput, OrderUncheckedCreateWithoutRiderInput>
+  }
+
+  export type OrderCreateManyRiderInputEnvelope = {
+    data: OrderCreateManyRiderInput | OrderCreateManyRiderInput[]
     skipDuplicates?: boolean
   }
 
@@ -16119,10 +16446,27 @@ export namespace Prisma {
     id?: IntFilter<"Order"> | number
     publicId?: StringFilter<"Order"> | string
     userId?: IntFilter<"Order"> | number
+    riderId?: IntNullableFilter<"Order"> | number | null
     status?: EnumOrderStatusFilter<"Order"> | $Enums.OrderStatus
     createdAt?: DateTimeFilter<"Order"> | Date | string
     updatedAt?: DateTimeFilter<"Order"> | Date | string
     deletedAt?: DateTimeNullableFilter<"Order"> | Date | string | null
+  }
+
+  export type OrderUpsertWithWhereUniqueWithoutRiderInput = {
+    where: OrderWhereUniqueInput
+    update: XOR<OrderUpdateWithoutRiderInput, OrderUncheckedUpdateWithoutRiderInput>
+    create: XOR<OrderCreateWithoutRiderInput, OrderUncheckedCreateWithoutRiderInput>
+  }
+
+  export type OrderUpdateWithWhereUniqueWithoutRiderInput = {
+    where: OrderWhereUniqueInput
+    data: XOR<OrderUpdateWithoutRiderInput, OrderUncheckedUpdateWithoutRiderInput>
+  }
+
+  export type OrderUpdateManyWithWhereWithoutRiderInput = {
+    where: OrderScalarWhereInput
+    data: XOR<OrderUpdateManyMutationInput, OrderUncheckedUpdateManyWithoutRiderInput>
   }
 
   export type CategoryCreateWithoutChildrenInput = {
@@ -16198,12 +16542,14 @@ export namespace Prisma {
     password: string
     profilePic?: string | null
     role?: $Enums.Role
+    details?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
     deletedAt?: Date | string | null
     updatedProducts?: ProductCreateNestedManyWithoutUpdatedByInput
     carts?: CartCreateNestedManyWithoutUserInput
     orders?: OrderCreateNestedManyWithoutUserInput
+    assignedOrders?: OrderCreateNestedManyWithoutRiderInput
   }
 
   export type UserUncheckedCreateWithoutUpdatedCategoriesInput = {
@@ -16215,12 +16561,14 @@ export namespace Prisma {
     password: string
     profilePic?: string | null
     role?: $Enums.Role
+    details?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
     deletedAt?: Date | string | null
     updatedProducts?: ProductUncheckedCreateNestedManyWithoutUpdatedByInput
     carts?: CartUncheckedCreateNestedManyWithoutUserInput
     orders?: OrderUncheckedCreateNestedManyWithoutUserInput
+    assignedOrders?: OrderUncheckedCreateNestedManyWithoutRiderInput
   }
 
   export type UserCreateOrConnectWithoutUpdatedCategoriesInput = {
@@ -16340,12 +16688,14 @@ export namespace Prisma {
     password?: StringFieldUpdateOperationsInput | string
     profilePic?: NullableStringFieldUpdateOperationsInput | string | null
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    details?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     updatedProducts?: ProductUpdateManyWithoutUpdatedByNestedInput
     carts?: CartUpdateManyWithoutUserNestedInput
     orders?: OrderUpdateManyWithoutUserNestedInput
+    assignedOrders?: OrderUpdateManyWithoutRiderNestedInput
   }
 
   export type UserUncheckedUpdateWithoutUpdatedCategoriesInput = {
@@ -16357,12 +16707,14 @@ export namespace Prisma {
     password?: StringFieldUpdateOperationsInput | string
     profilePic?: NullableStringFieldUpdateOperationsInput | string | null
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    details?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     updatedProducts?: ProductUncheckedUpdateManyWithoutUpdatedByNestedInput
     carts?: CartUncheckedUpdateManyWithoutUserNestedInput
     orders?: OrderUncheckedUpdateManyWithoutUserNestedInput
+    assignedOrders?: OrderUncheckedUpdateManyWithoutRiderNestedInput
   }
 
   export type ProductUpsertWithWhereUniqueWithoutCategoryInput = {
@@ -16419,12 +16771,14 @@ export namespace Prisma {
     password: string
     profilePic?: string | null
     role?: $Enums.Role
+    details?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
     deletedAt?: Date | string | null
     updatedCategories?: CategoryCreateNestedManyWithoutUpdatedByInput
     carts?: CartCreateNestedManyWithoutUserInput
     orders?: OrderCreateNestedManyWithoutUserInput
+    assignedOrders?: OrderCreateNestedManyWithoutRiderInput
   }
 
   export type UserUncheckedCreateWithoutUpdatedProductsInput = {
@@ -16436,12 +16790,14 @@ export namespace Prisma {
     password: string
     profilePic?: string | null
     role?: $Enums.Role
+    details?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
     deletedAt?: Date | string | null
     updatedCategories?: CategoryUncheckedCreateNestedManyWithoutUpdatedByInput
     carts?: CartUncheckedCreateNestedManyWithoutUserInput
     orders?: OrderUncheckedCreateNestedManyWithoutUserInput
+    assignedOrders?: OrderUncheckedCreateNestedManyWithoutRiderInput
   }
 
   export type UserCreateOrConnectWithoutUpdatedProductsInput = {
@@ -16581,12 +16937,14 @@ export namespace Prisma {
     password?: StringFieldUpdateOperationsInput | string
     profilePic?: NullableStringFieldUpdateOperationsInput | string | null
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    details?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     updatedCategories?: CategoryUpdateManyWithoutUpdatedByNestedInput
     carts?: CartUpdateManyWithoutUserNestedInput
     orders?: OrderUpdateManyWithoutUserNestedInput
+    assignedOrders?: OrderUpdateManyWithoutRiderNestedInput
   }
 
   export type UserUncheckedUpdateWithoutUpdatedProductsInput = {
@@ -16598,12 +16956,14 @@ export namespace Prisma {
     password?: StringFieldUpdateOperationsInput | string
     profilePic?: NullableStringFieldUpdateOperationsInput | string | null
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    details?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     updatedCategories?: CategoryUncheckedUpdateManyWithoutUpdatedByNestedInput
     carts?: CartUncheckedUpdateManyWithoutUserNestedInput
     orders?: OrderUncheckedUpdateManyWithoutUserNestedInput
+    assignedOrders?: OrderUncheckedUpdateManyWithoutRiderNestedInput
   }
 
   export type ProductImageUpsertWithWhereUniqueWithoutProductInput = {
@@ -16777,12 +17137,14 @@ export namespace Prisma {
     password: string
     profilePic?: string | null
     role?: $Enums.Role
+    details?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
     deletedAt?: Date | string | null
     updatedProducts?: ProductCreateNestedManyWithoutUpdatedByInput
     updatedCategories?: CategoryCreateNestedManyWithoutUpdatedByInput
     orders?: OrderCreateNestedManyWithoutUserInput
+    assignedOrders?: OrderCreateNestedManyWithoutRiderInput
   }
 
   export type UserUncheckedCreateWithoutCartsInput = {
@@ -16794,12 +17156,14 @@ export namespace Prisma {
     password: string
     profilePic?: string | null
     role?: $Enums.Role
+    details?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
     deletedAt?: Date | string | null
     updatedProducts?: ProductUncheckedCreateNestedManyWithoutUpdatedByInput
     updatedCategories?: CategoryUncheckedCreateNestedManyWithoutUpdatedByInput
     orders?: OrderUncheckedCreateNestedManyWithoutUserInput
+    assignedOrders?: OrderUncheckedCreateNestedManyWithoutRiderInput
   }
 
   export type UserCreateOrConnectWithoutCartsInput = {
@@ -16855,12 +17219,14 @@ export namespace Prisma {
     password?: StringFieldUpdateOperationsInput | string
     profilePic?: NullableStringFieldUpdateOperationsInput | string | null
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    details?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     updatedProducts?: ProductUpdateManyWithoutUpdatedByNestedInput
     updatedCategories?: CategoryUpdateManyWithoutUpdatedByNestedInput
     orders?: OrderUpdateManyWithoutUserNestedInput
+    assignedOrders?: OrderUpdateManyWithoutRiderNestedInput
   }
 
   export type UserUncheckedUpdateWithoutCartsInput = {
@@ -16872,12 +17238,14 @@ export namespace Prisma {
     password?: StringFieldUpdateOperationsInput | string
     profilePic?: NullableStringFieldUpdateOperationsInput | string | null
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    details?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     updatedProducts?: ProductUncheckedUpdateManyWithoutUpdatedByNestedInput
     updatedCategories?: CategoryUncheckedUpdateManyWithoutUpdatedByNestedInput
     orders?: OrderUncheckedUpdateManyWithoutUserNestedInput
+    assignedOrders?: OrderUncheckedUpdateManyWithoutRiderNestedInput
   }
 
   export type CartItemUpsertWithWhereUniqueWithoutCartInput = {
@@ -17032,12 +17400,14 @@ export namespace Prisma {
     password: string
     profilePic?: string | null
     role?: $Enums.Role
+    details?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
     deletedAt?: Date | string | null
     updatedProducts?: ProductCreateNestedManyWithoutUpdatedByInput
     updatedCategories?: CategoryCreateNestedManyWithoutUpdatedByInput
     carts?: CartCreateNestedManyWithoutUserInput
+    assignedOrders?: OrderCreateNestedManyWithoutRiderInput
   }
 
   export type UserUncheckedCreateWithoutOrdersInput = {
@@ -17049,17 +17419,61 @@ export namespace Prisma {
     password: string
     profilePic?: string | null
     role?: $Enums.Role
+    details?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
     deletedAt?: Date | string | null
     updatedProducts?: ProductUncheckedCreateNestedManyWithoutUpdatedByInput
     updatedCategories?: CategoryUncheckedCreateNestedManyWithoutUpdatedByInput
     carts?: CartUncheckedCreateNestedManyWithoutUserInput
+    assignedOrders?: OrderUncheckedCreateNestedManyWithoutRiderInput
   }
 
   export type UserCreateOrConnectWithoutOrdersInput = {
     where: UserWhereUniqueInput
     create: XOR<UserCreateWithoutOrdersInput, UserUncheckedCreateWithoutOrdersInput>
+  }
+
+  export type UserCreateWithoutAssignedOrdersInput = {
+    publicId?: string
+    name: string
+    email: string
+    phone: string
+    password: string
+    profilePic?: string | null
+    role?: $Enums.Role
+    details?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    deletedAt?: Date | string | null
+    updatedProducts?: ProductCreateNestedManyWithoutUpdatedByInput
+    updatedCategories?: CategoryCreateNestedManyWithoutUpdatedByInput
+    carts?: CartCreateNestedManyWithoutUserInput
+    orders?: OrderCreateNestedManyWithoutUserInput
+  }
+
+  export type UserUncheckedCreateWithoutAssignedOrdersInput = {
+    id?: number
+    publicId?: string
+    name: string
+    email: string
+    phone: string
+    password: string
+    profilePic?: string | null
+    role?: $Enums.Role
+    details?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    deletedAt?: Date | string | null
+    updatedProducts?: ProductUncheckedCreateNestedManyWithoutUpdatedByInput
+    updatedCategories?: CategoryUncheckedCreateNestedManyWithoutUpdatedByInput
+    carts?: CartUncheckedCreateNestedManyWithoutUserInput
+    orders?: OrderUncheckedCreateNestedManyWithoutUserInput
+  }
+
+  export type UserCreateOrConnectWithoutAssignedOrdersInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutAssignedOrdersInput, UserUncheckedCreateWithoutAssignedOrdersInput>
   }
 
   export type OrderItemCreateWithoutOrderInput = {
@@ -17130,12 +17544,14 @@ export namespace Prisma {
     password?: StringFieldUpdateOperationsInput | string
     profilePic?: NullableStringFieldUpdateOperationsInput | string | null
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    details?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     updatedProducts?: ProductUpdateManyWithoutUpdatedByNestedInput
     updatedCategories?: CategoryUpdateManyWithoutUpdatedByNestedInput
     carts?: CartUpdateManyWithoutUserNestedInput
+    assignedOrders?: OrderUpdateManyWithoutRiderNestedInput
   }
 
   export type UserUncheckedUpdateWithoutOrdersInput = {
@@ -17147,12 +17563,62 @@ export namespace Prisma {
     password?: StringFieldUpdateOperationsInput | string
     profilePic?: NullableStringFieldUpdateOperationsInput | string | null
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    details?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     updatedProducts?: ProductUncheckedUpdateManyWithoutUpdatedByNestedInput
     updatedCategories?: CategoryUncheckedUpdateManyWithoutUpdatedByNestedInput
     carts?: CartUncheckedUpdateManyWithoutUserNestedInput
+    assignedOrders?: OrderUncheckedUpdateManyWithoutRiderNestedInput
+  }
+
+  export type UserUpsertWithoutAssignedOrdersInput = {
+    update: XOR<UserUpdateWithoutAssignedOrdersInput, UserUncheckedUpdateWithoutAssignedOrdersInput>
+    create: XOR<UserCreateWithoutAssignedOrdersInput, UserUncheckedCreateWithoutAssignedOrdersInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutAssignedOrdersInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutAssignedOrdersInput, UserUncheckedUpdateWithoutAssignedOrdersInput>
+  }
+
+  export type UserUpdateWithoutAssignedOrdersInput = {
+    publicId?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    phone?: StringFieldUpdateOperationsInput | string
+    password?: StringFieldUpdateOperationsInput | string
+    profilePic?: NullableStringFieldUpdateOperationsInput | string | null
+    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    details?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updatedProducts?: ProductUpdateManyWithoutUpdatedByNestedInput
+    updatedCategories?: CategoryUpdateManyWithoutUpdatedByNestedInput
+    carts?: CartUpdateManyWithoutUserNestedInput
+    orders?: OrderUpdateManyWithoutUserNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutAssignedOrdersInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    publicId?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    phone?: StringFieldUpdateOperationsInput | string
+    password?: StringFieldUpdateOperationsInput | string
+    profilePic?: NullableStringFieldUpdateOperationsInput | string | null
+    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    details?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updatedProducts?: ProductUncheckedUpdateManyWithoutUpdatedByNestedInput
+    updatedCategories?: CategoryUncheckedUpdateManyWithoutUpdatedByNestedInput
+    carts?: CartUncheckedUpdateManyWithoutUserNestedInput
+    orders?: OrderUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type OrderItemUpsertWithWhereUniqueWithoutOrderInput = {
@@ -17206,6 +17672,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     deletedAt?: Date | string | null
     user: UserCreateNestedOneWithoutOrdersInput
+    rider?: UserCreateNestedOneWithoutAssignedOrdersInput
     payment?: PaymentCreateNestedOneWithoutOrderInput
   }
 
@@ -17213,6 +17680,7 @@ export namespace Prisma {
     id?: number
     publicId?: string
     userId: number
+    riderId?: number | null
     status?: $Enums.OrderStatus
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -17279,6 +17747,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     user?: UserUpdateOneRequiredWithoutOrdersNestedInput
+    rider?: UserUpdateOneWithoutAssignedOrdersNestedInput
     payment?: PaymentUpdateOneWithoutOrderNestedInput
   }
 
@@ -17286,6 +17755,7 @@ export namespace Prisma {
     id?: IntFieldUpdateOperationsInput | number
     publicId?: StringFieldUpdateOperationsInput | string
     userId?: IntFieldUpdateOperationsInput | number
+    riderId?: NullableIntFieldUpdateOperationsInput | number | null
     status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -17342,6 +17812,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     deletedAt?: Date | string | null
     user: UserCreateNestedOneWithoutOrdersInput
+    rider?: UserCreateNestedOneWithoutAssignedOrdersInput
     items?: OrderItemCreateNestedManyWithoutOrderInput
   }
 
@@ -17349,6 +17820,7 @@ export namespace Prisma {
     id?: number
     publicId?: string
     userId: number
+    riderId?: number | null
     status?: $Enums.OrderStatus
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -17379,6 +17851,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     user?: UserUpdateOneRequiredWithoutOrdersNestedInput
+    rider?: UserUpdateOneWithoutAssignedOrdersNestedInput
     items?: OrderItemUpdateManyWithoutOrderNestedInput
   }
 
@@ -17386,6 +17859,7 @@ export namespace Prisma {
     id?: IntFieldUpdateOperationsInput | number
     publicId?: StringFieldUpdateOperationsInput | string
     userId?: IntFieldUpdateOperationsInput | number
+    riderId?: NullableIntFieldUpdateOperationsInput | number | null
     status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -17428,6 +17902,17 @@ export namespace Prisma {
   export type OrderCreateManyUserInput = {
     id?: number
     publicId?: string
+    riderId?: number | null
+    status?: $Enums.OrderStatus
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    deletedAt?: Date | string | null
+  }
+
+  export type OrderCreateManyRiderInput = {
+    id?: number
+    publicId?: string
+    userId: number
     status?: $Enums.OrderStatus
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -17545,6 +18030,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    rider?: UserUpdateOneWithoutAssignedOrdersNestedInput
     items?: OrderItemUpdateManyWithoutOrderNestedInput
     payment?: PaymentUpdateOneWithoutOrderNestedInput
   }
@@ -17552,6 +18038,7 @@ export namespace Prisma {
   export type OrderUncheckedUpdateWithoutUserInput = {
     id?: IntFieldUpdateOperationsInput | number
     publicId?: StringFieldUpdateOperationsInput | string
+    riderId?: NullableIntFieldUpdateOperationsInput | number | null
     status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -17563,6 +18050,40 @@ export namespace Prisma {
   export type OrderUncheckedUpdateManyWithoutUserInput = {
     id?: IntFieldUpdateOperationsInput | number
     publicId?: StringFieldUpdateOperationsInput | string
+    riderId?: NullableIntFieldUpdateOperationsInput | number | null
+    status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type OrderUpdateWithoutRiderInput = {
+    publicId?: StringFieldUpdateOperationsInput | string
+    status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    user?: UserUpdateOneRequiredWithoutOrdersNestedInput
+    items?: OrderItemUpdateManyWithoutOrderNestedInput
+    payment?: PaymentUpdateOneWithoutOrderNestedInput
+  }
+
+  export type OrderUncheckedUpdateWithoutRiderInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    publicId?: StringFieldUpdateOperationsInput | string
+    userId?: IntFieldUpdateOperationsInput | number
+    status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    items?: OrderItemUncheckedUpdateManyWithoutOrderNestedInput
+    payment?: PaymentUncheckedUpdateOneWithoutOrderNestedInput
+  }
+
+  export type OrderUncheckedUpdateManyWithoutRiderInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    publicId?: StringFieldUpdateOperationsInput | string
+    userId?: IntFieldUpdateOperationsInput | number
     status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string

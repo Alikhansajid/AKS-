@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -10,10 +9,8 @@ import type { CartItem } from '@/types';
 const fetcher = async (url: string): Promise<CartItem[]> => {
   const res = await fetch(url, { credentials: 'include' });
   if (!res.ok) {
-    let errorText;
     try {
-      errorText = await res.text();
-      const errorData = JSON.parse(errorText);
+      const errorData = await res.json();
       throw new Error(errorData.error || errorData.details || 'Failed to fetch cart');
     } catch {
       throw new Error('Failed to fetch cart');
@@ -26,6 +23,13 @@ const fetcher = async (url: string): Promise<CartItem[]> => {
 export default function CheckoutPage() {
   const { data: cartItems, error } = useSWR<CartItem[], Error>('/api/cart', fetcher);
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+  const [shippingDetails, setShippingDetails] = useState({
+    name: '',
+    address: '',
+    city: '',
+    postalCode: '',
+    phone: '',
+  });
   const router = useRouter();
 
   const total =
@@ -37,30 +41,30 @@ export default function CheckoutPage() {
       return;
     }
 
+    if (!shippingDetails.name || !shippingDetails.address || !shippingDetails.city || !shippingDetails.postalCode || !shippingDetails.phone) {
+      toast.error('Please fill in all shipping details.');
+      return;
+    }
+
     setIsPlacingOrder(true);
 
     try {
       const res = await fetch('/api/checkout', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ paymentMethod: method }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          paymentMethod: method,
+          shippingDetails,
+          paymentStatus: method === 'COD' ? 'pending' : 'successful'
+        }),
         credentials: 'include',
       });
 
-      let result;
-      try {
-        result = await res.json();
-      } catch (jsonError) {
-        console.error('JSON parse error:', jsonError);
-        throw new Error('Invalid response from server');
-      }
-
+      const result = await res.json();
       setIsPlacingOrder(false);
 
       if (res.ok && method === 'COD') {
-        toast.success('Order placed with COD');
+        toast.success('Order placed with Cash on Delivery (Pending)');
         router.push('/checkout/success');
       } else if (res.ok && method === 'card' && result.paymentUrl) {
         window.location.href = result.paymentUrl;
@@ -68,9 +72,7 @@ export default function CheckoutPage() {
         toast.error(result.error || result.details || 'Checkout failed');
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unexpected error occurred';
-      console.error('Checkout error:', { message: errorMessage, stack: error instanceof Error ? error.stack : undefined });
-      toast.error(errorMessage);
+      toast.error(error instanceof Error ? error.message : 'Unexpected error occurred');
       setIsPlacingOrder(false);
     }
   };
@@ -84,51 +86,96 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6">Review Your Order</h1>
+    <div className="max-w-5xl mx-auto p-6 bg-gray-50 min-h-screen">
+      <h1 className="text-4xl font-bold mb-8 text-gray-800 text-center">Checkout</h1>
 
-      {cartItems.length > 0 ? (
-        <>
-          <ul className="space-y-4">
-            {cartItems.map((item) => (
-              <li
-                key={item.id}
-                className="flex justify-between items-center border-b py-2"
-              >
-                <div>
-                  <p className="font-medium">{item.product.name}</p>
-                  <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
-                </div>
-                <div>${(item.product.price * item.quantity).toFixed(2)}</div>
-              </li>
-            ))}
-          </ul>
+      <div className="grid md:grid-cols-3 gap-8">
+        {/* Cart Summary */}
+        <div className="md:col-span-2 bg-white p-6 rounded-lg shadow">
+          <h2 className="text-2xl font-semibold mb-4 text-gray-700">Your Order</h2>
+          {cartItems.length > 0 ? (
+            <ul className="space-y-4">
+              {cartItems.map((item) => (
+                <li key={item.id} className="flex justify-between items-center border-b pb-3">
+                  <div>
+                    <p className="font-medium text-gray-800">{item.product.name}</p>
+                    <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
+                  </div>
+                  <div className="text-gray-700 font-semibold">
+                    ${(item.product.price * item.quantity).toFixed(2)}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-gray-500">Your cart is empty.</p>
+          )}
 
-          <div className="text-xl font-bold mt-6">
+          <div className="text-xl font-bold mt-6 text-gray-800">
             Total: ${total.toFixed(2)}
           </div>
+        </div>
 
-          <div className="mt-8 flex gap-4">
+        {/* Shipping Form */}
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h2 className="text-2xl font-semibold mb-4 text-gray-700">Shipping Details</h2>
+          <div className="space-y-4">
+            <input
+              type="text"
+              placeholder="Full Name"
+              value={shippingDetails.name}
+              onChange={(e) => setShippingDetails({ ...shippingDetails, name: e.target.value })}
+              className="w-full border rounded px-4 py-2"
+            />
+            <input
+              type="text"
+              placeholder="Address"
+              value={shippingDetails.address}
+              onChange={(e) => setShippingDetails({ ...shippingDetails, address: e.target.value })}
+              className="w-full border rounded px-4 py-2"
+            />
+            <input
+              type="text"
+              placeholder="City"
+              value={shippingDetails.city}
+              onChange={(e) => setShippingDetails({ ...shippingDetails, city: e.target.value })}
+              className="w-full border rounded px-4 py-2"
+            />
+            <input
+              type="text"
+              placeholder="Postal Code"
+              value={shippingDetails.postalCode}
+              onChange={(e) => setShippingDetails({ ...shippingDetails, postalCode: e.target.value })}
+              className="w-full border rounded px-4 py-2"
+            />
+            <input
+              type="text"
+              placeholder="Phone Number"
+              value={shippingDetails.phone}
+              onChange={(e) => setShippingDetails({ ...shippingDetails, phone: e.target.value })}
+              className="w-full border rounded px-4 py-2"
+            />
+          </div>
+
+          {/* Payment Buttons */}
+          <div className="mt-6 flex gap-4">
             <button
-              className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 transition"
+              className="bg-emerald-600 text-white px-6 py-2 rounded hover:bg-emerald-700 transition w-full"
               onClick={() => handleCheckout('COD')}
               disabled={isPlacingOrder}
             >
-              {isPlacingOrder ? '...' : 'COD'}
+              {isPlacingOrder ? 'Processing...' : 'Cash on Delivery'}
             </button>
-
             <button
-              className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition"
+              className="bg-orange-600 text-white px-6 py-2 rounded hover:bg-orange-700 transition w-full"
               onClick={() => handleCheckout('card')}
               disabled={isPlacingOrder}
             >
-              {isPlacingOrder ? '...' : 'Card Payment'}
+              {isPlacingOrder ? 'Processing...' : 'Card Payment'}
             </button>
           </div>
-        </>
-      ) : (
-        <p>Your cart is empty.</p>
-      )}
+        </div>
+      </div>
     </div>
   );
 }
