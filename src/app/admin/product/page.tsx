@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useState, Component, ReactNode, ErrorInfo, useRef } from 'react';
+import { useState, Component, ReactNode, ErrorInfo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import toast, { Toaster } from 'react-hot-toast';
 import Link from 'next/link';
+import useSWR, { mutate } from 'swr';
 
-// Interfaces
+// -------- Types --------
 interface ProductImage {
   id: number;
   url: string;
@@ -49,7 +50,14 @@ interface ImageErrorBoundaryProps {
   fallbackSrc: string;
 }
 
-// Error Boundary Component
+// -------- Generic SWR fetcher --------
+const jsonFetcher = async <T,>(url: string): Promise<T> => {
+  const res = await fetch(url, { credentials: 'include' });
+  if (!res.ok) throw new Error('Failed request');
+  return res.json();
+};
+
+// -------- Error Boundary for Images --------
 class ImageErrorBoundary extends Component<ImageErrorBoundaryProps, ImageErrorBoundaryState> {
   state: ImageErrorBoundaryState = { hasError: false, error: null };
 
@@ -78,81 +86,44 @@ class ImageErrorBoundary extends Component<ImageErrorBoundaryProps, ImageErrorBo
   }
 }
 
+// -------- Main Component --------
 export default function AdminProduct() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+  const router = useRouter();
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [images, setImages] = useState<File[]>([]);
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
   const [quantity, setQuantity] = useState('');
   const [categoryId, setCategoryId] = useState('');
-  const [images, setImages] = useState<File[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  useEffect(() => {
-    fetch('/api/auth/session')
-      .then(res => res.json())
-      .then(data => {
-        if (data?.user?.role !== 'ADMIN') {
-          router.push('/');
-        }
-      })
-      .catch(() => {
-        toast.error('Failed to verify session. Redirecting...');
-        router.push('/');
-      });
-  }, [router]);
+  // ✅ Session check
+  const { data: session } = useSWR<{ user?: { role?: string } }>(
+    '/api/auth/session',
+    jsonFetcher,
+    { onError: () => router.push('/') }
+  );
+  if (session && session.user?.role !== 'ADMIN') router.push('/');
 
-  useEffect(() => {
-    fetchProducts();
-    fetchCategories();
-  }, []);
+  // ✅ Products & Categories
+  const { data: products = [], error: productsError } = useSWR<Product[]>('/api/admin/products', jsonFetcher);
+  const { data: categories = [], error: categoriesError } = useSWR<Category[]>('/api/admin/categories', jsonFetcher);
 
-  useEffect(() => {
-    let filtered = products;
+  if (productsError) toast.error('Failed to load products');
+  if (categoriesError) toast.error('Failed to load categories');
 
-    if (searchQuery) {
-      filtered = filtered.filter(product =>
-        product.name.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
+  // ✅ Filtering
+  const filteredProducts = products.filter(product => {
+    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = selectedCategory ? product.categoryId === parseInt(selectedCategory) : true;
+    return matchesSearch && matchesCategory;
+  });
 
-    if (selectedCategory) {
-      filtered = filtered.filter(product => product.categoryId === parseInt(selectedCategory));
-    }
-
-    setFilteredProducts(filtered);
-  }, [products, searchQuery, selectedCategory]);
-
-  const fetchProducts = async () => {
-    try {
-      const res = await fetch('/api/admin/products');
-      if (!res.ok) throw new Error();
-      const data: Product[] = await res.json();
-      setProducts(data);
-    } catch {
-      toast.error('Failed to load products');
-    }
-  };
-
-  const fetchCategories = async () => {
-    try {
-      const res = await fetch('/api/admin/categories');
-      if (!res.ok) throw new Error();
-      const data: Category[] = await res.json();
-      setCategories(data);
-    } catch {
-      toast.error('Failed to load categories');
-    }
-  };
-
+  // ✅ Add product
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (images.length > 4) {
       toast.error('Maximum 4 images allowed.');
       return;
@@ -166,36 +137,35 @@ export default function AdminProduct() {
     images.forEach(file => formData.append('images', file));
 
     try {
-      const res = await fetch('/api/admin/products', {
-        method: 'POST',
-        body: formData,
-      });
+      const res = await fetch('/api/admin/products', { method: 'POST', body: formData });
+      if (!res.ok) throw new Error();
 
-      if (res.ok) {
-        setName('');
-        setPrice('');
-        setQuantity('');
-        setCategoryId('');
-        setImages([]);
-        setShowAddModal(false);
-        fetchProducts();
-        toast.success('Product added successfully');
-        router.push('/admin/product');
-      } else {
-        const errorData = await res.json();
-        toast.error(errorData.error || 'Failed to add product');
-      }
+      mutate('/api/admin/products'); // ✅ Refresh list
+      setName(''); setPrice(''); setQuantity(''); setCategoryId(''); setImages([]);
+      setShowAddModal(false);
+      toast.success('Product added successfully');
     } catch {
-      toast.error('An error occurred while adding the product');
+      toast.error('Failed to add product');
     }
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files) {
-      const remainingSlots = 4 - images.length;
-      const selectedFiles = Array.from(files).slice(0, remainingSlots);
+  // ✅ Delete product
+  const handleDelete = async (publicId: string) => {
+    try {
+      const res = await fetch(`/api/admin/products/${publicId}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error();
+      mutate('/api/admin/products'); // ✅ Refresh list
+      toast.success('Product deleted successfully');
+    } catch {
+      toast.error('Failed to delete product');
+    }
+  };
 
+  // ✅ Image handling
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const remainingSlots = 4 - images.length;
+      const selectedFiles = Array.from(e.target.files).slice(0, remainingSlots);
       const validImages = selectedFiles.filter(file => {
         const isValidType = file.type.startsWith('image/');
         const isValidSize = file.size <= 5 * 1024 * 1024;
@@ -203,7 +173,6 @@ export default function AdminProduct() {
         if (!isValidSize) toast.error(`${file.name} exceeds 5MB limit.`);
         return isValidType && isValidSize;
       });
-
       setImages(prev => [...prev, ...validImages].slice(0, 4));
     }
   };
@@ -213,46 +182,31 @@ export default function AdminProduct() {
     toast.success('Image removed');
   };
 
-  const handleDelete = async (publicId: string) => {
-    try {
-      const res = await fetch(`/api/admin/products/${publicId}`, { method: 'DELETE' });
-      if (res.ok) {
-        fetchProducts();
-        toast.success('Product deleted successfully');
-      } else {
-        toast.error('Failed to delete product');
-      }
-    } catch {
-      toast.error('An error occurred while deleting the product');
-    }
-  };
-
+  // -------- UI --------
   return (
-    <div className="min-h-screen p-6" style={{ backgroundColor: '#18181b' }}>
+    <div className="min-h-screen p-6 bg-zinc-900">
       <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
-      <h1 className="text-3xl font-bold text-yellow-400 mb-6 text-center">Product Management</h1>
+      <h1 className="text-3xl font-bold text-amber-400 mb-6 text-center">Product Management</h1>
 
       <div className="mb-6 text-center">
-        <Link href="/admin/categories" className="text-yellow-400 hover:text-yellow-300 font-semibold">
+        <Link href="/admin/categories" className="text-amber-400 hover:text-amber-300 font-semibold">
           Manage Categories
         </Link>
       </div>
 
-      {/* Search and Filter */}
+      {/* Search + Filter */}
       <div className="mb-6 flex flex-col md:flex-row gap-4">
         <input
           type="text"
           placeholder="Search products..."
           value={searchQuery}
           onChange={e => setSearchQuery(e.target.value)}
-          className="p-3 rounded-lg w-full md:w-1/2"
-          style={{ backgroundColor: '#3f3f47', color: 'white', border: '1px solid #555' }}
+          className="p-3 rounded-lg w-full md:w-1/2 bg-zinc-800 text-white border border-zinc-700"
         />
         <select
           value={selectedCategory}
           onChange={e => setSelectedCategory(e.target.value)}
-          className="p-3 rounded-lg w-full md:w-1/4"
-          style={{ backgroundColor: '#3f3f47', color: 'white', border: '1px solid #555' }}
+          className="p-3 rounded-lg w-full md:w-1/4 bg-zinc-800 text-white border border-zinc-700"
         >
           <option value="">All Categories</option>
           {categories.map(cat => (
@@ -268,62 +222,28 @@ export default function AdminProduct() {
         </select>
         <button
           onClick={() => setShowAddModal(true)}
-          className="px-6 py-3 rounded-lg transition shadow-md"
-          style={{ backgroundColor: '#facc15', color: '#000' }}
+          className="px-6 py-3 rounded-lg shadow-md bg-amber-400 text-black"
         >
           Add Product
         </button>
       </div>
 
-      {/* Modal */}
+      {/* Add Product Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="p-6 rounded-xl shadow-lg max-w-2xl w-full" style={{ backgroundColor: '#3f3f47' }}>
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+          <div className="p-6 rounded-xl shadow-lg max-w-2xl w-full bg-zinc-800">
             <h2 className="text-xl font-semibold mb-4 text-white">Add Product</h2>
             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Inputs */}
-              <input
-                type="text"
-                placeholder="Product Name"
-                value={name}
-                onChange={e => setName(e.target.value)}
-                className="p-3 rounded-lg"
-                style={{ backgroundColor: '#18181b', color: 'white', border: '1px solid #555' }}
-                required
-              />
-              <input
-                type="number"
-                placeholder="Price"
-                value={price}
-                onChange={e => setPrice(e.target.value)}
-                className="p-3 rounded-lg"
-                style={{ backgroundColor: '#18181b', color: 'white', border: '1px solid #555' }}
-                required
-              />
-              <input
-                type="number"
-                placeholder="Quantity"
-                value={quantity}
-                onChange={e => setQuantity(e.target.value)}
-                className="p-3 rounded-lg"
-                style={{ backgroundColor: '#18181b', color: 'white', border: '1px solid #555' }}
-                required
-              />
-              <select
-                value={categoryId}
-                onChange={e => setCategoryId(e.target.value)}
-                className="p-3 rounded-lg"
-                style={{ backgroundColor: '#18181b', color: 'white', border: '1px solid #555' }}
-                required
-              >
+              <input type="text" placeholder="Product Name" value={name} onChange={e => setName(e.target.value)} className="p-3 rounded-lg bg-zinc-900 text-white border border-zinc-700" required />
+              <input type="number" placeholder="Price" value={price} onChange={e => setPrice(e.target.value)} className="p-3 rounded-lg bg-zinc-900 text-white border border-zinc-700" required />
+              <input type="number" placeholder="Quantity" value={quantity} onChange={e => setQuantity(e.target.value)} className="p-3 rounded-lg bg-zinc-900 text-white border border-zinc-700" required />
+              <select value={categoryId} onChange={e => setCategoryId(e.target.value)} className="p-3 rounded-lg bg-zinc-900 text-white border border-zinc-700" required>
                 <option value="">Select Category</option>
                 {categories.map(cat => (
                   <optgroup key={cat.publicId} label={cat.name}>
                     <option value={cat.id}>{cat.name}</option>
                     {cat.children?.map(sub => (
-                      <option key={sub.publicId} value={sub.id}>
-                        &nbsp;&nbsp;{sub.name}
-                      </option>
+                      <option key={sub.publicId} value={sub.id}>&nbsp;&nbsp;{sub.name}</option>
                     ))}
                   </optgroup>
                 ))}
@@ -331,67 +251,34 @@ export default function AdminProduct() {
 
               {/* Images */}
               <div className="md:col-span-2">
-                <input
-                  type="file"
-                  multiple
-                  onChange={handleImageChange}
-                  className="p-3 rounded-lg w-full"
-                  style={{ backgroundColor: '#18181b', color: 'white', border: '1px solid #555' }}
-                  ref={fileInputRef}
-                />
+                <input type="file" multiple onChange={handleImageChange} ref={fileInputRef} className="p-3 rounded-lg w-full bg-zinc-900 text-white border border-zinc-700" />
                 <div className="flex gap-2 mt-2 flex-wrap items-center">
                   {images.map((file, idx) => (
                     <div key={idx} className="relative">
                       <ImageErrorBoundary fallbackSrc="/images/placeholder.jpg">
-                        <Image
-                          src={URL.createObjectURL(file)}
-                          alt="preview"
-                          width={80}
-                          height={80}
-                          className="rounded-lg object-cover"
-                        />
+                        <Image src={URL.createObjectURL(file)} alt="preview" width={80} height={80} className="rounded-lg object-cover" />
                       </ImageErrorBoundary>
-                      <button
-                        type="button"
-                        onClick={() => removeImage(idx)}
-                        className="absolute top-0 right-0 bg-red-600 text-white w-5 h-5 rounded-full flex items-center justify-center"
-                      >
-                        ×
-                      </button>
+                      <button type="button" onClick={() => removeImage(idx)} className="absolute top-0 right-0 bg-red-600 text-white w-5 h-5 rounded-full flex items-center justify-center">×</button>
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* Buttons */}
               <div className="md:col-span-2 flex justify-end gap-4 mt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 rounded-lg transition"
-                  style={{ backgroundColor: '#555', color: 'white' }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-lg transition"
-                  style={{ backgroundColor: '#facc15', color: '#000' }}
-                >
-                  Add Product
-                </button>
+                <button type="button" onClick={() => setShowAddModal(false)} className="px-4 py-2 rounded-lg bg-zinc-600 text-white">Cancel</button>
+                <button type="submit" className="px-4 py-2 rounded-lg bg-amber-400 text-black">Add Product</button>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* Cards */}
+      {/* Product Cards */}
       <div className="mt-8">
         <h2 className="text-xl font-semibold mb-4 text-white">Products</h2>
         <div className="space-y-4">
           {filteredProducts.map(product => (
-            <div key={product.id} className="flex items-center justify-between p-4 rounded-lg shadow" style={{ backgroundColor: '#3f3f47' }}>
+            <div key={product.id} className="flex items-center justify-between p-4 rounded-lg shadow bg-zinc-800">
               <div className="flex items-center gap-4">
                 <div>
                   <h3 className="text-white font-semibold">{product.name}</h3>
@@ -401,32 +288,14 @@ export default function AdminProduct() {
                 <div className="flex gap-2">
                   {product.images?.map((img, idx) => (
                     <ImageErrorBoundary key={idx} fallbackSrc="/images/placeholder.jpg">
-                      <Image
-                        src={img.url}
-                        alt={product.name}
-                        width={50}
-                        height={50}
-                        className="rounded-lg object-cover"
-                      />
+                      <Image src={img.url} alt={product.name} width={50} height={50} className="rounded-lg object-cover" />
                     </ImageErrorBoundary>
                   ))}
                 </div>
               </div>
               <div className="flex gap-2">
-                <Link
-                  href={`/admin/products/edits/${product.publicId}`}
-                  className="px-3 py-1 rounded transition text-sm"
-                  style={{ backgroundColor: '#facc15', color: '#000' }}
-                >
-                  Edit
-                </Link>
-                <button
-                  onClick={() => handleDelete(product.publicId)}
-                  className="px-3 py-1 rounded transition text-sm"
-                  style={{ backgroundColor: '#dc2626', color: 'white' }}
-                >
-                  Delete
-                </button>
+                <Link href={`/admin/products/edits/${product.publicId}`} className="px-3 py-1 rounded bg-amber-400 text-black text-sm">Edit</Link>
+                <button onClick={() => handleDelete(product.publicId)} className="px-3 py-1 rounded bg-red-600 text-white text-sm">Delete</button>
               </div>
             </div>
           ))}

@@ -36,7 +36,7 @@ export async function PUT(request: NextRequest, { params }: { params: { publicId
     const updatedOrder = await prisma.order.update({
       where: { publicId },
       data: { status },
-      include: {
+      select: {
         user: { select: { name: true, email: true } },
         items: { include: { product: { select: { name: true, price: true } } } },
         payment: true,

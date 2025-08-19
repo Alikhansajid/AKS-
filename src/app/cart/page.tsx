@@ -1,6 +1,7 @@
 'use client';
 
 import useSWR from 'swr';
+import useSWRMutation from 'swr/mutation';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -13,7 +14,22 @@ import {
   syncLocalCartToServer,
 } from '@/utils/cart';
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+// SWR fetcher for GET
+const fetcher = (url: string) =>
+  fetch(url, { credentials: 'include' }).then((res) => {
+    if (!res.ok) throw new Error('Failed to fetch');
+    return res.json();
+  });
+
+// SWR mutation fetcher for DELETE
+async function deleteCartItem(url: string, { arg }: { arg: number }) {
+  const res = await fetch(`${url}/${arg}`, {
+    method: 'DELETE',
+    credentials: 'include',
+  });
+  if (!res.ok) throw new Error('Failed to delete item');
+  return true;
+}
 
 interface CartItem {
   id?: number;
@@ -28,19 +44,23 @@ interface CartItem {
 
 export default function CartPage() {
   const { data: cartData, mutate, isLoading } = useSWR<CartItem[]>('/api/cart', fetcher);
+  const { data: user } = useSWR('/api/me', fetcher);
   const [localCart, setLocalCart] = useState<CartItem[]>([]);
   const [hydrated, setHydrated] = useState(false);
   const router = useRouter();
 
+  // SWR mutation hook for deleting items
+  const { trigger: deleteItem } = useSWRMutation('/api/cart', deleteCartItem);
+
+  // Sync local cart when logged in
   useEffect(() => {
     const initializeCart = async () => {
       const local = getLocalCart();
       setLocalCart(local);
 
-      const res = await fetch('/api/me');
-      if (res.ok) {
+      if (user) {
         await syncLocalCartToServer();
-        await mutate();
+        await mutate(); // refresh server cart
         saveLocalCart([]);
       }
 
@@ -48,32 +68,33 @@ export default function CartPage() {
     };
 
     initializeCart();
-  }, [mutate]);
+  }, [user, mutate]);
 
+  // Remove item (server or local)
   const removeItem = async (itemIdOrPublicId: number | string) => {
-    if (typeof itemIdOrPublicId === 'number') {
-      await fetch(`/api/cart/${itemIdOrPublicId}`, { method: 'DELETE' });
-      mutate();
-    } else {
-      const updatedCart = localCart.filter((item) => item.publicId !== itemIdOrPublicId);
-      setLocalCart(updatedCart);
-      saveLocalCart(updatedCart);
+    try {
+      if (typeof itemIdOrPublicId === 'number') {
+        await deleteItem(itemIdOrPublicId); // ✅ pass id as arg
+        await mutate(); // revalidate cart
+      } else {
+        const updatedCart = localCart.filter((item) => item.publicId !== itemIdOrPublicId);
+        setLocalCart(updatedCart);
+        saveLocalCart(updatedCart);
+      }
+      toast.success('Item removed');
+    } catch {
+      toast.error('Failed to remove item');
     }
-    toast.success('Item removed');
   };
 
-  const checkout = async () => {
-    try {
-      const res = await fetch('/api/me', { method: 'GET', credentials: 'include' });
-      if (!res.ok) {
-        toast.info('Please log in to checkout');
-        router.push('/login');
-        return;
-      }
-      router.push('/checkout');
-    } catch {
-      toast.error('Error during checkout');
+  // Checkout
+  const checkout = () => {
+    if (!user) {
+      toast.info('Please log in to checkout');
+      router.push('/login');
+      return;
     }
+    router.push('/checkout');
   };
 
   const displayCart = cartData && cartData.length > 0 ? cartData : localCart;

@@ -1,9 +1,9 @@
 'use client';
 
+import { useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { useSWRConfig } from 'swr';
 import useSWRMutation from 'swr/mutation';
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
 import { Line } from 'react-chartjs-2';
 import {
@@ -25,7 +25,6 @@ interface RiderDetails {
   cnic?: string;
   vehicleType?: string;
   vehicleNumber?: string;
-  pendingDetails?: RiderDetails[];
 }
 
 interface RiderProfile {
@@ -34,7 +33,7 @@ interface RiderProfile {
   name: string;
   phone?: string;
   profilePic?: string;
-  details?: RiderDetails;
+  details?: RiderDetails & { pendingDetails?: RiderDetails[] };
 }
 
 interface PerformanceData {
@@ -54,11 +53,11 @@ export default function RiderDashboardPage() {
   const router = useRouter();
   const { mutate: globalMutate } = useSWRConfig();
 
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     try {
-      const res = await fetch('/api/rider/profile', { method: 'GET', headers: { 'Content-Type': 'application/json' } });
+      const res = await fetch('/api/rider/profile');
       if (!res.ok) throw new Error((await res.json()).error || 'Failed to fetch profile');
-      const data = await res.json();
+      const data: { user: RiderProfile } = await res.json();
       setProfile(data.user);
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : 'Failed to load profile');
@@ -66,26 +65,26 @@ export default function RiderDashboardPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [router]);
+
+  const fetchPerformance = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/rider/performance?range=${timeRange}`);
+      if (!res.ok) throw new Error((await res.json()).error || 'Failed to fetch performance data');
+      const data: PerformanceData = await res.json();
+      setPerformanceData(data);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : 'Failed to load performance data');
+    }
+  }, [timeRange]);
 
   useEffect(() => {
-    const fetchPerformance = async () => {
-      try {
-        const res = await fetch(`/api/rider/performance?range=${timeRange}`, {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' },
-        });
-        if (!res.ok) throw new Error((await res.json()).error || 'Failed to fetch performance data');
-        const data: PerformanceData = await res.json();
-        setPerformanceData(data);
-      } catch (error: unknown) {
-        toast.error(error instanceof Error ? error.message : 'Failed to load performance data');
-      }
-    };
-
     fetchProfile();
+  }, [fetchProfile]);
+
+  useEffect(() => {
     fetchPerformance();
-  }, [router, timeRange]);
+  }, [fetchPerformance]);
 
   const chartData = {
     labels: performanceData.labels,
@@ -104,7 +103,12 @@ export default function RiderDashboardPage() {
     responsive: true,
     plugins: {
       legend: { position: 'top' as const },
-      title: { display: true, text: `Performance - ${timeRange.charAt(0).toUpperCase() + timeRange.slice(1).replace('last', 'Last ')}` },
+      title: {
+        display: true,
+        text: `Performance - ${
+          timeRange.charAt(0).toUpperCase() + timeRange.slice(1).replace('last', 'Last ')
+        }`,
+      },
     },
   };
 
@@ -114,7 +118,10 @@ export default function RiderDashboardPage() {
     return res.json();
   }
 
-  const { trigger: triggerLogout, isMutating: isLoggingOut } = useSWRMutation('/api/auth/logout', logoutFetcher);
+  const { trigger: triggerLogout, isMutating: isLoggingOut } = useSWRMutation(
+    '/api/auth/logout',
+    logoutFetcher,
+  );
 
   const handleLogout = async () => {
     try {
@@ -214,7 +221,12 @@ export default function RiderDashboardPage() {
           )}
           <button
             onClick={() => {
-              setEditDetails(profile.details || {});
+              setEditDetails({
+                address: profile.details?.address || '',
+                cnic: profile.details?.cnic || '',
+                vehicleType: profile.details?.vehicleType || '',
+                vehicleNumber: profile.details?.vehicleNumber || '',
+              });
               setIsEditOpen(true);
             }}
             className="mt-4 py-2 px-4 bg-emerald-600 text-white rounded hover:bg-emerald-700"

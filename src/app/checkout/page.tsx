@@ -3,33 +3,83 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
+import useSWRMutation from 'swr/mutation';
 import { toast } from 'react-toastify';
 import type { CartItem } from '@/types';
 
+// --- Types ---
+interface ShippingDetails {
+  name: string;
+  address: string;
+  city: string;
+  postalCode: string;
+  phone: string;
+}
+
+interface CheckoutArgs {
+  method: 'COD' | 'card';
+  shippingDetails: ShippingDetails;
+}
+
+interface CheckoutResponse {
+  success?: boolean;
+  paymentUrl?: string;
+  error?: string;
+  details?: string;
+}
+
+// --- Cart fetcher ---
 const fetcher = async (url: string): Promise<CartItem[]> => {
   const res = await fetch(url, { credentials: 'include' });
   if (!res.ok) {
-    try {
-      const errorData = await res.json();
-      throw new Error(errorData.error || errorData.details || 'Failed to fetch cart');
-    } catch {
-      throw new Error('Failed to fetch cart');
-    }
+    const errorData: { error?: string; details?: string } = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || errorData.details || 'Failed to fetch cart');
   }
   const data = await res.json();
-  return Array.isArray(data) ? data : [];
+  return Array.isArray(data) ? (data as CartItem[]) : [];
+};
+
+// --- Checkout mutation fetcher (no fetch in component) ---
+const checkoutFetcher = async (
+  url: string,
+  { arg }: { arg: CheckoutArgs }
+): Promise<CheckoutResponse> => {
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({
+      paymentMethod: arg.method,
+      shippingDetails: arg.shippingDetails,
+      paymentStatus: arg.method === 'COD' ? 'pending' : 'successful',
+    }),
+  });
+
+  const result: CheckoutResponse = await res.json();
+  if (!res.ok) {
+    throw new Error(result.error || result.details || 'Checkout failed');
+  }
+  return result;
 };
 
 export default function CheckoutPage() {
   const { data: cartItems, error } = useSWR<CartItem[], Error>('/api/cart', fetcher);
-  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
-  const [shippingDetails, setShippingDetails] = useState({
+
+  const { trigger: checkout, isMutating } = useSWRMutation<
+    CheckoutResponse,
+    Error,
+    '/api/checkout',
+    CheckoutArgs
+  >('/api/checkout', checkoutFetcher);
+
+  const [shippingDetails, setShippingDetails] = useState<ShippingDetails>({
     name: '',
     address: '',
     city: '',
     postalCode: '',
     phone: '',
   });
+
   const router = useRouter();
 
   const total =
@@ -41,39 +91,27 @@ export default function CheckoutPage() {
       return;
     }
 
-    if (!shippingDetails.name || !shippingDetails.address || !shippingDetails.city || !shippingDetails.postalCode || !shippingDetails.phone) {
+    const { name, address, city, postalCode, phone } = shippingDetails;
+    if (!name || !address || !city || !postalCode || !phone) {
       toast.error('Please fill in all shipping details.');
       return;
     }
 
-    setIsPlacingOrder(true);
-
     try {
-      const res = await fetch('/api/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          paymentMethod: method,
-          shippingDetails,
-          paymentStatus: method === 'COD' ? 'pending' : 'successful'
-        }),
-        credentials: 'include',
-      });
+      const result = await checkout({ method, shippingDetails });
 
-      const result = await res.json();
-      setIsPlacingOrder(false);
-
-      if (res.ok && method === 'COD') {
+      if (method === 'COD') {
         toast.success('Order placed with Cash on Delivery (Pending)');
         router.push('/checkout/success');
-      } else if (res.ok && method === 'card' && result.paymentUrl) {
+      } else if (method === 'card' && result.paymentUrl) {
         window.location.href = result.paymentUrl;
-      } else {
-        toast.error(result.error || result.details || 'Checkout failed');
       }
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Unexpected error occurred');
-      setIsPlacingOrder(false);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        toast.error(err.message);
+      } else {
+        toast.error('Unexpected error occurred');
+      }
     }
   };
 
@@ -96,7 +134,10 @@ export default function CheckoutPage() {
           {cartItems.length > 0 ? (
             <ul className="space-y-4">
               {cartItems.map((item) => (
-                <li key={item.id} className="flex justify-between items-center border-b pb-3">
+                <li
+                  key={item.id}
+                  className="flex justify-between items-center border-b pb-3"
+                >
                   <div>
                     <p className="font-medium text-gray-800">{item.product.name}</p>
                     <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
@@ -124,35 +165,45 @@ export default function CheckoutPage() {
               type="text"
               placeholder="Full Name"
               value={shippingDetails.name}
-              onChange={(e) => setShippingDetails({ ...shippingDetails, name: e.target.value })}
+              onChange={(e) =>
+                setShippingDetails({ ...shippingDetails, name: e.target.value })
+              }
               className="w-full border rounded px-4 py-2"
             />
             <input
               type="text"
               placeholder="Address"
               value={shippingDetails.address}
-              onChange={(e) => setShippingDetails({ ...shippingDetails, address: e.target.value })}
+              onChange={(e) =>
+                setShippingDetails({ ...shippingDetails, address: e.target.value })
+              }
               className="w-full border rounded px-4 py-2"
             />
             <input
               type="text"
               placeholder="City"
               value={shippingDetails.city}
-              onChange={(e) => setShippingDetails({ ...shippingDetails, city: e.target.value })}
+              onChange={(e) =>
+                setShippingDetails({ ...shippingDetails, city: e.target.value })
+              }
               className="w-full border rounded px-4 py-2"
             />
             <input
               type="text"
               placeholder="Postal Code"
               value={shippingDetails.postalCode}
-              onChange={(e) => setShippingDetails({ ...shippingDetails, postalCode: e.target.value })}
+              onChange={(e) =>
+                setShippingDetails({ ...shippingDetails, postalCode: e.target.value })
+              }
               className="w-full border rounded px-4 py-2"
             />
             <input
               type="text"
               placeholder="Phone Number"
               value={shippingDetails.phone}
-              onChange={(e) => setShippingDetails({ ...shippingDetails, phone: e.target.value })}
+              onChange={(e) =>
+                setShippingDetails({ ...shippingDetails, phone: e.target.value })
+              }
               className="w-full border rounded px-4 py-2"
             />
           </div>
@@ -162,16 +213,16 @@ export default function CheckoutPage() {
             <button
               className="bg-emerald-600 text-white px-6 py-2 rounded hover:bg-emerald-700 transition w-full"
               onClick={() => handleCheckout('COD')}
-              disabled={isPlacingOrder}
+              disabled={isMutating}
             >
-              {isPlacingOrder ? 'Processing...' : 'Cash on Delivery'}
+              {isMutating ? 'Processing...' : 'Cash on Delivery'}
             </button>
             <button
               className="bg-orange-600 text-white px-6 py-2 rounded hover:bg-orange-700 transition w-full"
               onClick={() => handleCheckout('card')}
-              disabled={isPlacingOrder}
+              disabled={isMutating}
             >
-              {isPlacingOrder ? 'Processing...' : 'Card Payment'}
+              {isMutating ? 'Processing...' : 'Card Payment'}
             </button>
           </div>
         </div>

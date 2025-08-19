@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import useSWR from 'swr';
 
 import {
   Chart as ChartJS,
@@ -52,11 +53,17 @@ interface DashboardData {
   topCustomers: { customerName: string; orders: number; totalSpent: number }[];
 }
 
+const fetcher = async (url: string) => {
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error('Failed to fetch');
+  }
+  return res.json();
+};
+
 export default function AdminHome() {
   const router = useRouter();
-  const [data, setData] = useState<DashboardData | null>(null);
   const [timeframe, setTimeframe] = useState<Timeframe>('lifetime');
-  const [loading, setLoading] = useState(false);
 
   // auth check
   useEffect(() => {
@@ -76,32 +83,24 @@ export default function AdminHome() {
     checkAdmin();
   }, [router]);
 
-  // fetch dashboard data
+  // fetch dashboard data using SWR
+  const { data, error, isLoading } = useSWR<DashboardData>(
+    `/api/admin/dashboard?timeframe=${timeframe}`,
+    fetcher
+  );
+
   useEffect(() => {
-    setLoading(true);
-    fetch(`/api/admin/dashboard?timeframe=${timeframe}`)
-      .then((res) => res.json())
-      .then((payload) => {
-        if (payload?.error) {
-          toast.error(payload.error ?? 'Failed to fetch dashboard data');
-          setData(null);
-        } else {
-          setData(payload as DashboardData);
-        }
-      })
-      .catch(() => {
-        toast.error('Failed to fetch dashboard data');
-        setData(null);
-      })
-      .finally(() => setLoading(false));
-  }, [timeframe]);
+    if (error) {
+      toast.error('Failed to fetch dashboard data');
+    }
+  }, [error]);
 
   // --- Chart data builders with colors ---
 
   const ordersStatusData = useMemo(() => {
     const labels = data?.ordersByStatus?.map((o) => o.status) ?? [];
     const values = data?.ordersByStatus?.map((o) => o._count.status) ?? [];
-    const colors = ['#FBBF24', '#3B82F6', '#10B981', '#EF4444']; // amber, blue, green, red
+    const colors = ['#FBBF24', '#3B82F6', '#10B981', '#EF4444'];
     return {
       labels,
       datasets: [{
@@ -216,9 +215,9 @@ export default function AdminHome() {
         </div>
       </header>
 
-      {loading && <p>Loading data...</p>}
+      {isLoading && <p>Loading data...</p>}
 
-      {data && !loading && (
+      {data && !isLoading && (
         <>
           {/* Top cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">

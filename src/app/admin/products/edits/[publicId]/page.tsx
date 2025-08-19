@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Image from 'next/image';
 import { toast } from 'react-toastify';
+import useSWR from 'swr';
+import useSWRMutation from 'swr/mutation';
 
 interface Category {
   id: number;
@@ -18,134 +20,137 @@ interface ProductImage {
   productId: number;
 }
 
+interface Product {
+  id: number;
+  publicId: string;
+  name: string;
+  price: number;
+  quantity: number;
+  categoryId: number;
+  images: ProductImage[];
+}
+
+const fetcher = async <T,>(url: string): Promise<T> => {
+  const res = await fetch(url, { credentials: 'include' });
+  if (!res.ok) throw new Error('Failed to fetch');
+  return res.json();
+};
+
+// Mutation fetcher for product update
+const updateProductFetcher = async (
+  url: string,
+  { arg }: { arg: FormData }
+): Promise<Product> => {
+  const res = await fetch(url, {
+    method: 'PUT',
+    body: arg,
+    credentials: 'include',
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || 'Failed to update product');
+  }
+  return res.json();
+};
+
 export default function EditProduct() {
+  const router = useRouter();
+  const params = useParams();
+  const publicId = params?.publicId as string | undefined;
+
+  const {
+    data: product,
+    error: productError,
+    isLoading: productLoading,
+  } = useSWR<Product>(publicId ? `/api/admin/products/${publicId}` : null, fetcher);
+
+  const {
+    data: categories,
+    error: categoryError,
+  } = useSWR<Category[]>('/api/admin/categories', fetcher);
+
+  const { trigger: updateProduct } = useSWRMutation(
+    publicId ? `/api/admin/products/${publicId}` : null,
+    updateProductFetcher
+  );
+
+  // Controlled form state
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
   const [quantity, setQuantity] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [images, setImages] = useState<File[]>([]);
   const [existingImages, setExistingImages] = useState<ProductImage[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
-  const router = useRouter();
-  const params = useParams();
-  const publicId = params?.publicId as string | undefined;
 
+  // Sync product → form state
   useEffect(() => {
-    if (!publicId) {
-      toast.error('Invalid or missing product ID');
-      router.push('/admin/dashboard');
-      return;
+    if (product) {
+      setName(product.name || '');
+      setPrice(product.price?.toString() || '');
+      setQuantity(product.quantity?.toString() || '');
+      setCategoryId(product.categoryId?.toString() || '');
+      setExistingImages(product.images || []);
     }
-
-    fetch('/api/auth/session', { credentials: 'include' })
-      .then(res => res.json())
-      .then(data => {
-        if (!data.user || data.user.role !== 'ADMIN') {
-          toast.error('Unauthorized access');
-          router.push('/');
-        }
-      })
-      .catch(() => {
-        toast.error('Failed to verify session');
-        router.push('/');
-      });
-
-    fetch(`/api/admin/products/${publicId}`, { credentials: 'include' })
-      .then(res => res.json())
-      .then(data => {
-        if (data.error) {
-          toast.error(data.error);
-          router.push('/admin/dashboard');
-        } else {
-          setName(data.name || '');
-          setPrice(data.price?.toString() || '');
-          setQuantity(data.quantity?.toString() || '');
-          setCategoryId(data.categoryId?.toString() || '');
-          setExistingImages(data.images || []);
-        }
-      })
-      .catch(() => {
-        toast.error('Failed to load product');
-        router.push('/admin/dashboard');
-      })
-      .finally(() => setLoading(false));
-
-    fetch('/api/admin/categories', { credentials: 'include' })
-      .then(res => res.json())
-      .then(data => {
-        if (!data.error) {
-          setCategories(data);
-        } else {
-          toast.error(data.error);
-        }
-      })
-      .catch(() => toast.error('Failed to load categories'));
-  }, [publicId, params, router]);
+  }, [product]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
       const validImages = Array.from(files).filter(
-        file => file.type.startsWith('image/') && file.size < 5 * 1024 * 1024
+        (file) => file.type.startsWith('image/') && file.size < 5 * 1024 * 1024
       );
       if (validImages.length !== files.length) {
         toast.error('Some images were invalid or too large (max 5MB).');
       }
-      setImages(prev => [...prev, ...validImages]);
+      setImages((prev) => [...prev, ...validImages]);
     }
   };
 
   const removeExistingImage = (imageId: number) => {
-    setExistingImages(prev => prev.filter(img => img.id !== imageId));
+    setExistingImages((prev) => prev.filter((img) => img.id !== imageId));
     toast.success('Existing image removed');
   };
 
   const removeNewImage = (index: number) => {
-    setImages(prev => prev.filter((_, i) => i !== index));
+    setImages((prev) => prev.filter((_, i) => i !== index));
     toast.success('New image removed');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!publicId) {
-      toast.error('Cannot update: Invalid product ID');
+      toast.error('Invalid product ID');
       return;
     }
-    setLoading(true);
 
     const formData = new FormData();
     formData.append('name', name);
     formData.append('price', price);
     formData.append('quantity', quantity);
     formData.append('categoryId', categoryId);
-    images.forEach(file => formData.append('images', file));
+    images.forEach((file) => formData.append('images', file));
     formData.append('existingImages', JSON.stringify(existingImages));
 
     try {
-      const res = await fetch(`/api/admin/products/${publicId}`, {
-        method: 'PUT',
-        body: formData,
-        credentials: 'include',
-      });
-
-      const result = await res.json();
-
-      if (res.ok) {
-        toast.success('Product updated successfully');
-        router.push('/admin');
-      } else {
-        toast.error(result.error || 'Error updating product');
-      }
-    } catch {
-      toast.error('Something went wrong');
-    } finally {
-      setLoading(false);
+      await updateProduct(formData);
+      toast.success('Product updated successfully');
+      router.push('/admin');
+    } catch (err) {
+      if (err instanceof Error) toast.error(err.message);
+      else toast.error('Something went wrong');
     }
   };
 
-  if (loading) {
+  if (productLoading) {
     return <div className="p-6 text-center text-amber-400">Loading...</div>;
+  }
+
+  if (productError || categoryError) {
+    return (
+      <div className="p-6 text-center text-red-500">
+        Failed to load product or categories
+      </div>
+    );
   }
 
   return (
@@ -159,7 +164,7 @@ export default function EditProduct() {
           type="text"
           placeholder="Product Name"
           value={name}
-          onChange={e => setName(e.target.value)}
+          onChange={(e) => setName(e.target.value)}
           className="border border-zinc-700 bg-zinc-900 p-3 rounded text-zinc-100 placeholder-zinc-500 focus:ring-2 focus:ring-amber-400"
           required
         />
@@ -167,32 +172,34 @@ export default function EditProduct() {
           type="number"
           placeholder="Price"
           value={price}
-          onChange={e => setPrice(e.target.value)}
-          className="border border-zinc-700 bg-zinc-900 p-3 rounded text-zinc-100 placeholder-zinc-500 focus:ring-2 focus:ring-amber-400"
+          onChange={(e) => setPrice(e.target.value)}
           step="0.01"
+          className="border border-zinc-700 bg-zinc-900 p-3 rounded text-zinc-100 placeholder-zinc-500 focus:ring-2 focus:ring-amber-400"
           required
         />
         <input
           type="number"
           placeholder="Quantity"
           value={quantity}
-          onChange={e => setQuantity(e.target.value)}
+          onChange={(e) => setQuantity(e.target.value)}
           className="border border-zinc-700 bg-zinc-900 p-3 rounded text-zinc-100 placeholder-zinc-500 focus:ring-2 focus:ring-amber-400"
           required
         />
         <select
           value={categoryId}
-          onChange={e => setCategoryId(e.target.value)}
+          onChange={(e) => setCategoryId(e.target.value)}
           className="border border-zinc-700 bg-zinc-900 p-3 rounded text-zinc-100 focus:ring-2 focus:ring-amber-400"
           required
         >
           <option value="">Select Category</option>
-          {categories.map(cat => (
+          {categories?.map((cat) => (
             <option key={cat.id} value={cat.id} className="bg-zinc-900">
               {cat.name}
             </option>
           ))}
         </select>
+
+        {/* IMAGE HANDLING */}
         <div className="md:col-span-2">
           <input
             type="file"
@@ -201,7 +208,7 @@ export default function EditProduct() {
             className="border border-zinc-700 bg-zinc-900 p-3 rounded text-zinc-100 w-full"
           />
           <div className="flex gap-2 mt-2 flex-wrap">
-            {existingImages.map(img => (
+            {existingImages.map((img) => (
               <div key={img.id} className="relative">
                 <Image
                   src={img.url}
@@ -239,12 +246,12 @@ export default function EditProduct() {
             ))}
           </div>
         </div>
+
         <button
           type="submit"
-          className="md:col-span-2 bg-amber-500 hover:bg-amber-400 text-zinc-900 font-semibold px-6 py-3 rounded-lg transition duration-300 shadow-md disabled:bg-zinc-600"
-          disabled={loading}
+          className="md:col-span-2 bg-amber-500 hover:bg-amber-400 text-zinc-900 font-semibold px-6 py-3 rounded-lg transition duration-300 shadow-md"
         >
-          {loading ? 'Updating...' : 'Update Product'}
+          Update Product
         </button>
       </form>
     </div>

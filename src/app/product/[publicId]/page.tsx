@@ -1,13 +1,16 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { toast } from 'react-toastify';
+import useSWR, { mutate } from 'swr';
+import useSWRMutation from 'swr/mutation';
 import 'react-toastify/dist/ReactToastify.css';
 import { addToLocalCart } from '@/utils/cart';
 
+// ---------- Types ----------
 interface ProductImage {
   url: string;
 }
@@ -25,62 +28,126 @@ interface User {
   role: 'ADMIN' | 'CUSTOMER';
 }
 
+interface Session {
+  user?: User;
+}
+
+interface CartItem {
+  id: number;
+  publicId: string;
+  quantity: number;
+  product: Product;
+}
+
+interface CartArgs {
+  publicId: string;
+  quantity: number;
+}
+
+// ---------- SWR Fetcher ----------
+const fetcher = async <T,>(url: string): Promise<T> => {
+  const res = await fetch(url, { credentials: 'include' });
+  if (!res.ok) throw new Error(`Failed to fetch ${url}`);
+  return res.json() as Promise<T>;
+};
+
+// ---------- Cart Mutation ----------
+const addToCartFetcher = async (
+  url: string,
+  { arg }: { arg: CartArgs }
+): Promise<{ success: boolean; error?: string }> => {
+  const res = await fetch(url, {
+    method: 'POST',
+    body: JSON.stringify(arg),
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+  });
+
+  if (res.status === 401) {
+    return { success: false, error: 'unauthorized' };
+  }
+
+  if (!res.ok) {
+    const result = await res.json();
+    throw new Error(result.error || 'Error adding to cart');
+  }
+
+  return { success: true };
+};
+
+// ---------- Shared Cart Hook ----------
+export function useCart() {
+  const { data, error, isLoading } = useSWR<CartItem[]>(
+    '/api/cart',
+    fetcher,
+    { fallbackData: [] }
+  );
+
+  return {
+    cart: data ?? [],
+    isLoading,
+    isError: !!error,
+  };
+}
+
+// ---------- Cart Badge ----------
+export function CartBadge() {
+  const { cart } = useCart();
+  const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+
+  return (
+    <Link href="/cart" className="relative">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        className="h-7 w-7 text-neutral-700"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path d="M3 3h2l.4 2M7 13h10l4-8H5.4" />
+        <circle cx="9" cy="21" r="1" />
+        <circle cx="20" cy="21" r="1" />
+      </svg>
+      {totalItems > 0 && (
+        <span className="absolute -top-1 -right-2 bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+          {totalItems}
+        </span>
+      )}
+    </Link>
+  );
+}
+
+// ---------- Product Detail Page ----------
 export default function ProductDetail() {
-  const [product, setProduct] = useState<Product | null>(null);
-  const [user, setUser] = useState<User | null>(null);
-  const [products, setProducts] = useState<Product[]>([]);
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState('All');
   const [activeThumbIndex, setActiveThumbIndex] = useState(0);
   const router = useRouter();
-  const { publicId } = useParams();
+  const params = useParams<{ publicId: string }>();
+  const publicId = Array.isArray(params.publicId)
+    ? params.publicId[0]
+    : params.publicId;
 
-  useEffect(() => {
-    async function fetchProduct() {
-      try {
-        const res = await fetch(`/api/products/${publicId}`);
-        if (res.ok) {
-          const data = await res.json();
-          setProduct(data);
-          if (data.images?.length > 0) setActiveThumbIndex(0);
-        } else {
-          toast.error('Failed to load product');
-          router.push('/');
-        }
-      } catch {
-        toast.error('Something went wrong');
-        router.push('/');
-      }
-    }
+  // --- Data fetching ---
+  const { data: product } = useSWR<Product>(
+    publicId ? `/api/products/${publicId}` : null,
+    fetcher
+  );
 
-    async function fetchProducts() {
-      try {
-        const res = await fetch('/api/products');
-        const data = await res.json();
-        if (Array.isArray(data)) {
-          setProducts(data);
-        } else {
-          setProducts([]);
-        }
-      } catch {
-        setProducts([]);
-        toast.error('Failed to load products');
-      }
-    }
+  const { data: products = [] } = useSWR<Product[]>(
+    '/api/products',
+    fetcher,
+    { fallbackData: [] }
+  );
 
-    async function fetchSession() {
-      try {
-        const res = await fetch('/api/auth/session');
-        const data = await res.json();
-        if (data.user) setUser(data.user);
-      } catch {}
-    }
+  const { data: session } = useSWR<Session>('/api/auth/session', fetcher);
+  const user = session?.user ?? null;
 
-    fetchProduct();
-    fetchProducts();
-    fetchSession();
-  }, [publicId, router]);
+  // --- Cart mutation ---
+  const { trigger: triggerAddToCart, isMutating: addingToCart } =
+    useSWRMutation('/api/cart', addToCartFetcher);
 
+  // --- Derived ---
   const categories = ['All', ...new Set(products.map((p) => p.category.name))];
   const filteredProducts = products.filter(
     (p) =>
@@ -88,26 +155,26 @@ export default function ProductDetail() {
       (filterCategory === 'All' || p.category.name === filterCategory)
   );
 
+  // --- Handlers ---
   const handleAddToCart = async () => {
     if (!product) return;
     try {
-      const res = await fetch('/api/cart', {
-        method: 'POST',
-        body: JSON.stringify({ publicId: product.publicId, quantity: 1 }),
-        headers: { 'Content-Type': 'application/json' },
+      const result = await triggerAddToCart({
+        publicId: product.publicId,
+        quantity: 1,
       });
 
-      if (res.status === 401) {
+      if (!result.success && result.error === 'unauthorized') {
         addToLocalCart(product, 1);
         toast.info('Added to local cart. Login to sync.');
-      } else if (res.ok) {
-        toast.success('Added to cart');
-      } else {
-        const result = await res.json();
-        toast.error(result.error || 'Error adding to cart');
+        return;
       }
-    } catch {
-      toast.error('Something went wrong');
+
+      // 🔥 revalidate global cart badge
+      await mutate('/api/cart');
+      toast.success('Added to cart');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Something went wrong');
     }
   };
 
@@ -117,6 +184,7 @@ export default function ProductDetail() {
       try {
         const res = await fetch(`/api/admin/products/${product.publicId}`, {
           method: 'DELETE',
+          credentials: 'include',
         });
         if (res.ok) {
           toast.success('Product deleted');
@@ -131,13 +199,17 @@ export default function ProductDetail() {
     }
   };
 
-  const handleEdit = () => router.push(`/admin/products/edits/${product?.publicId}`);
+  const handleEdit = () =>
+    router.push(`/admin/products/edits/${product?.publicId}`);
 
   if (!product) return <div className="text-center py-12">Loading...</div>;
 
+  // --- Render ---
   return (
     <div className="bg-neutral-50 min-h-screen font-sans">
-      {/* Search + Filter */}
+    
+
+      
       <div className="bg-white px-4 py-3 shadow-sm sticky top-0 z-40 flex flex-wrap gap-3 items-center justify-between">
         <input
           type="text"
@@ -209,10 +281,14 @@ export default function ProductDetail() {
           <div className="flex gap-3 mt-4">
             <button
               onClick={handleAddToCart}
-              disabled={product.quantity === 0}
+              disabled={product.quantity === 0 || addingToCart}
               className="bg-amber-600 text-white px-5 py-2 rounded-lg hover:bg-amber-700 disabled:opacity-50"
             >
-              {product.quantity === 0 ? 'Out of Stock' : 'Add to Cart'}
+              {product.quantity === 0
+                ? 'Out of Stock'
+                : addingToCart
+                ? 'Adding...'
+                : 'Add to Cart'}
             </button>
             {user?.role === 'ADMIN' && (
               <>
