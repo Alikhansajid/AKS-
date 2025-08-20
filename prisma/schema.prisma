@@ -47,9 +47,6 @@ model User {
   orders            Order[]    @relation("CustomerOrders")
   assignedOrders    Order[]    @relation("RiderAssignedOrders")
 
-  conversations     ConversationParticipant[]
-  messages          Message[]
-  
   @@map("user")
 }
 
@@ -180,52 +177,4 @@ model Payment {
   order Order @relation(fields: [orderId], references: [id])
 
   @@map("payment")
-}
-
-
-
-
-model Conversation {
-  id         Int        @id @default(autoincrement())
-  publicId   String     @unique @default(cuid()) @map("public_id")
-  createdAt  DateTime   @default(now()) @map("created_at")
-  updatedAt  DateTime   @updatedAt @map("updated_at")
-  deletedAt  DateTime?  @map("deleted_at")
-
-  // participants (user, admin, rider, etc.)
-  participants ConversationParticipant[]
-
-  // messages in this conversation
-  messages    Message[]
-  
-  @@map("conversation")
-}
-
-model ConversationParticipant {
-  id             Int           @id @default(autoincrement())
-  conversationId Int
-  userId         Int
-  role           Role          // can use existing Role enum
-
-  conversation   Conversation  @relation(fields: [conversationId], references: [id])
-  user           User          @relation(fields: [userId], references: [id])
-
-  @@unique([conversationId, userId]) // avoid duplicates
-  @@map("conversation_participant")
-}
-
-model Message {
-  id             Int           @id @default(autoincrement())
-  publicId       String        @unique @default(cuid()) @map("public_id")
-  conversationId Int
-  senderId       Int
-  content        String
-  createdAt      DateTime      @default(now()) @map("created_at")
-  updatedAt      DateTime      @updatedAt @map("updated_at")
-  deletedAt      DateTime?     @map("deleted_at")
-
-  conversation   Conversation  @relation(fields: [conversationId], references: [id])
-  sender         User          @relation(fields: [senderId], references: [id])
-
-  @@map("message")
 }
