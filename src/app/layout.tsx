@@ -138,3 +138,33 @@ export default function RootLayout({
 //ask for specific fields in api (do not ask ID which is primary key)
 //rider can update info (make another object in db)
 //update in database after approval of admin 
+//update enum like orderstatus.PENDING
+//graphs on dashboard like monthly performance  
+
+
+
+
+
+//remove cart from admin and rider nav
+//rider detail should be in profile 
+//graph should be on the top of page 
+//real time update the page after any action 
+//there should be just one request at one time update previous req if you want to change anything 
+//add graph on admin dashboard 
+//rider
+//customer 
+//orders 
+//revenew
+//orders by category 
+
+
+
+
+
+//use SWR in all apis 
+
+//implement chat like whatsapp
+//admin can chat with customer ,rider vice virsa 
+//toast should not appear on sent msg
+//use socket.io 
+//memoize use callback 

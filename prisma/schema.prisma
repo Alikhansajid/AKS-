@@ -46,6 +46,8 @@ model User {
   carts             Cart[]
   orders            Order[]    @relation("CustomerOrders")
   assignedOrders    Order[]    @relation("RiderAssignedOrders")
+  conversations     UserOnConversation[]
+  sentMessages      Message[]
 
   @@map("user")
 }
@@ -177,4 +179,50 @@ model Payment {
   order Order @relation(fields: [orderId], references: [id])
 
   @@map("payment")
+}
+
+model Conversation {
+  id            String                @id @default(cuid())
+  publicId      String?               @unique @default(uuid()) // make optional
+  createdAt     DateTime              @default(now()) @map("created_at")
+  updatedAt     DateTime              @updatedAt @map("updated_at")
+  deletedAt     DateTime?             @map("deleted_at")
+  participants  UserOnConversation[]
+  messages      Message[]
+
+  @@index([publicId])
+  @@map("conversation")
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  publicId       String?      @unique @default(uuid()) // make optional
+  conversationId String
+  senderId       Int
+  text           String?                              // make optional
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+  deletedAt      DateTime?    @map("deleted_at")
+
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  sender         User         @relation(fields: [senderId], references: [id])
+
+  @@index([conversationId])
+  @@index([senderId])
+  @@map("message")
+}
+
+model UserOnConversation {
+  userId         Int
+  conversationId String
+  user           User          @relation(fields: [userId], references: [id])
+  conversation   Conversation  @relation(fields: [conversationId], references: [id])
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+  deletedAt      DateTime?     @map("deleted_at")
+
+  @@id([userId, conversationId])
+  @@index([userId])
+  @@index([conversationId])
+  @@map("user_on_conversation")
 }

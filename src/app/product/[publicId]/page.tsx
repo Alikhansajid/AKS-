@@ -119,14 +119,18 @@ export function CartBadge() {
 
 // ---------- Product Detail Page ----------
 export default function ProductDetail() {
-  const [search, setSearch] = useState('');
+const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState('All');
   const [activeThumbIndex, setActiveThumbIndex] = useState(0);
   const router = useRouter();
   const params = useParams<{ publicId: string }>();
-  const publicId = Array.isArray(params.publicId)
-    ? params.publicId[0]
-    : params.publicId;
+
+  // Safely access publicId
+  const publicId = params && params.publicId
+    ? Array.isArray(params.publicId)
+      ? params.publicId[0]
+      : params.publicId
+    : null;
 
   // --- Data fetching ---
   const { data: product } = useSWR<Product>(

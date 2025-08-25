@@ -219,6 +219,33 @@ exports.Prisma.PaymentScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
+exports.Prisma.ConversationScalarFieldEnum = {
+  id: 'id',
+  publicId: 'publicId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt'
+};
+
+exports.Prisma.MessageScalarFieldEnum = {
+  id: 'id',
+  publicId: 'publicId',
+  conversationId: 'conversationId',
+  senderId: 'senderId',
+  text: 'text',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt'
+};
+
+exports.Prisma.UserOnConversationScalarFieldEnum = {
+  userId: 'userId',
+  conversationId: 'conversationId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -272,7 +299,10 @@ exports.Prisma.ModelName = {
   CartItem: 'CartItem',
   Order: 'Order',
   OrderItem: 'OrderItem',
-  Payment: 'Payment'
+  Payment: 'Payment',
+  Conversation: 'Conversation',
+  Message: 'Message',
+  UserOnConversation: 'UserOnConversation'
 };
 
 /**
