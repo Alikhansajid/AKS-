@@ -54,21 +54,19 @@
 //   }
 // }
 
-
 import { NextResponse, NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/session';
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { publicId: string } }
+  { params }: { params: Record<string, string> }
 ) {
-  const { publicId } = params;
+  const publicId = params.publicId; // <-- safe now
 
   try {
     const session = await getSession(request);
     if (!session.user || session.user.role !== 'ADMIN') {
-      console.error('Unauthorized access attempt:', { session });
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -107,10 +105,9 @@ export async function PUT(
     return NextResponse.json(updatedOrder, { status: 200 });
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('Error updating order:', {
-      message: errorMessage,
-      stack: error instanceof Error ? error.stack : undefined,
-    });
-    return NextResponse.json({ error: 'Internal server error', details: errorMessage }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error', details: errorMessage },
+      { status: 500 }
+    );
   }
 }
