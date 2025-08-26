@@ -85,10 +85,7 @@ import { getSession } from '@/lib/session';
 
 
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: { publicId: string } }
-) {
+export async function PUT(request: NextRequest, { params }: { params: { publicId: string } }) {
   try {
     const session = await getSession(request);
 
@@ -100,7 +97,7 @@ export async function PUT(
     const { status } = body;
     const { publicId } = params;
 
-    // ✅ Ensure status is a valid Prisma enum
+    // ✅ validate using Prisma enum
     if (!status || !Object.values(OrderStatus).includes(status as OrderStatus)) {
       return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
     }
