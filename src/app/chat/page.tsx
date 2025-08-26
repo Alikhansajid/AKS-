@@ -420,7 +420,7 @@ export default function ChatPage() {
               isSocketConnected ? "text-green-500" : "text-red-500"
             }`}
           >
-            {isSocketConnected ? "Connected" : "Disconnected"}
+            {/* {isSocketConnected ? "Connected" : "Disconnected"} */}
           </span>
         </div>
 
