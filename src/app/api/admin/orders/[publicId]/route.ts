@@ -83,13 +83,12 @@ import { prisma } from '@/lib/prisma';
 import { OrderStatus } from '@/types/enums'
 import { getSession } from '@/lib/session';
 
-type Params = {
-  params: {
-    publicId: string;
-  };
-};
 
-export async function PUT(request: NextRequest, { params }: Params) {
+
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { publicId: string } }
+) {
   try {
     const session = await getSession(request);
 
@@ -101,7 +100,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
     const { status } = body;
     const { publicId } = params;
 
-    // ✅ Ensure status is a valid OrderStatus enum
+    // ✅ Ensure status is a valid Prisma enum
     if (!status || !Object.values(OrderStatus).includes(status as OrderStatus)) {
       return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
     }
@@ -125,7 +124,6 @@ export async function PUT(request: NextRequest, { params }: Params) {
       );
     }
 
-    // ✅ Cast to OrderStatus before updating
     const updatedOrder = await prisma.order.update({
       where: { publicId },
       data: { status: status as OrderStatus },
