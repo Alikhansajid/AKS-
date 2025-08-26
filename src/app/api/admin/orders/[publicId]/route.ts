@@ -54,15 +54,36 @@
 //   }
 // }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import { NextResponse, NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/session';
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Record<string, string> }
-) {
-  const publicId = params.publicId; // <-- safe now
+type RouteContext = {
+  params: {
+    publicId: string;
+  };
+};
+
+export async function PUT(request: NextRequest, { params }: RouteContext) {
+  const { publicId } = params;
 
   try {
     const session = await getSession(request);
