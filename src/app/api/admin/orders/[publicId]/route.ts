@@ -72,28 +72,37 @@
 
 
 
+
+
+
+
+
+
 import { NextResponse, NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { OrderStatus } from '@/types/enums'
 import { getSession } from '@/lib/session';
 
-type RouteContext = {
+type Params = {
   params: {
     publicId: string;
   };
 };
 
-export async function PUT(request: NextRequest, { params }: RouteContext) {
-  const { publicId } = params;
-
+export async function PUT(request: NextRequest, { params }: Params) {
   try {
     const session = await getSession(request);
+
     if (!session.user || session.user.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { status } = await request.json();
+    const body: { status?: string } = await request.json();
+    const { status } = body;
+    const { publicId } = params;
 
-    if (!status || !['PENDING', 'SHIPPED', 'DELIVERED', 'CANCELLED'].includes(status)) {
+    // ✅ Ensure status is a valid OrderStatus enum
+    if (!status || !Object.values(OrderStatus).includes(status as OrderStatus)) {
       return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
     }
 
@@ -106,16 +115,20 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
 
-    if (status === 'CANCELLED' && (order.payment?.status === 'SUCCESS' || order.status === 'DELIVERED')) {
+    if (
+      status === OrderStatus.CANCELLED &&
+      (order.payment?.status === 'SUCCESS' || order.status === OrderStatus.DELIVERED)
+    ) {
       return NextResponse.json(
         { error: 'Cannot cancel order with successful payment or delivered status' },
         { status: 400 }
       );
     }
 
+    // ✅ Cast to OrderStatus before updating
     const updatedOrder = await prisma.order.update({
       where: { publicId },
-      data: { status },
+      data: { status: status as OrderStatus },
       select: {
         user: { select: { name: true, email: true } },
         items: { include: { product: { select: { name: true, price: true } } } },
