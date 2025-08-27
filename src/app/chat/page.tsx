@@ -29,6 +29,7 @@ interface Message {
   sender: User;
   content: string;
   createdAt: string;
+  status?: string; // Added status field
 }
 
 interface Conversation {
@@ -72,7 +73,6 @@ export default function ChatPage() {
   const [showNewChat, setShowNewChat] = useState(false);
   const [userSearch, setUserSearch] = useState("");
   const [isSocketConnected, setIsSocketConnected] = useState(false);
-  // const [typingUsers, setTypingUsers] = useState<string[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Debounced search handlers
@@ -136,7 +136,6 @@ export default function ChatPage() {
 
   // Initialize Socket.IO connection
   useEffect(() => {
-    // Trigger Socket.IO server initialization
     fetch("/api/socket/io", { method: "GET", credentials: "include" })
       .then(() => console.log("🔌 Socket.IO server initialization triggered"))
       .catch((err) => console.error("Failed to initialize Socket.IO server:", err));
@@ -149,7 +148,7 @@ export default function ChatPage() {
       socket.emit("join", { publicId: me.publicId });
     }
 
-    // Listener 1: Messages for ACTIVE chat
+    // Listener 1: Active conversation messages
     socket.on("message:active", (msg: Message) => {
       if (activeConversation === msg.conversationPublicId) {
         mutateMessages((old = []) => {
@@ -159,42 +158,62 @@ export default function ChatPage() {
       }
     });
 
-    // Listener 2: Messages for sidebar
-    socket.on("message:sidebar", (msg: Message) => {
+    // Listener 2: Sidebar updates
+    socket.on("message:sidebar", (msg: Message | Conversation) => {
       mutateConversations((old = []) => {
-        const exists = old.find((c) => c.publicId === msg.conversationPublicId);
+        const exists = old.find((c) => c.publicId === msg.publicId || (msg as Message).conversationPublicId);
 
-        if (exists) {
+        if ("content" in msg) {
+          // Handle message event
+          if (exists) {
+            return [
+              {
+                ...exists,
+                lastMessage: msg,
+                unreadCount:
+                  activeConversation === msg.conversationPublicId
+                    ? 0
+                    : exists.unreadCount + (msg.sender.publicId !== me?.publicId ? 1 : 0),
+                updatedAt: msg.createdAt,
+              },
+              ...old
+                .filter((c) => c.publicId !== msg.conversationPublicId)
+                .sort(
+                  (a, b) =>
+                    new Date(b.lastMessage?.createdAt || b.updatedAt).getTime() -
+                    new Date(a.lastMessage?.createdAt || a.updatedAt).getTime()
+                ),
+            ];
+          }
           return [
             {
-              ...exists,
+              publicId: msg.conversationPublicId,
+              participants: [msg.sender],
               lastMessage: msg,
-              unreadCount:
-                activeConversation === msg.conversationPublicId
-                  ? 0
-                  : exists.unreadCount + 1,
+              unreadCount: activeConversation === msg.conversationPublicId ? 0 : 1,
               updatedAt: msg.createdAt,
             },
-            ...old
-              .filter((c) => c.publicId !== msg.conversationPublicId)
-              .sort(
-                (a, b) =>
-                  new Date(b.lastMessage?.createdAt || b.updatedAt).getTime() -
-                  new Date(a.lastMessage?.createdAt || a.updatedAt).getTime()
-              ),
+            ...old,
           ];
+        } else {
+          // Handle conversation update event (e.g., from marking as read)
+          if (exists) {
+            return [
+              {
+                ...exists,
+                ...msg, // Update with new conversation data (including unreadCount)
+              },
+              ...old
+                .filter((c) => c.publicId !== msg.publicId)
+                .sort(
+                  (a, b) =>
+                    new Date(b.lastMessage?.createdAt || b.updatedAt).getTime() -
+                    new Date(a.lastMessage?.createdAt || a.updatedAt).getTime()
+                ),
+            ];
+          }
+          return [msg, ...old];
         }
-
-        return [
-          {
-            publicId: msg.conversationPublicId,
-            participants: [msg.sender],
-            lastMessage: msg,
-            unreadCount: activeConversation === msg.conversationPublicId ? 0 : 1,
-            updatedAt: msg.createdAt,
-          },
-          ...old,
-        ];
       }, false);
     });
 
@@ -206,19 +225,6 @@ export default function ChatPage() {
       }, false);
     });
 
-    // Listener 4: Typing events
-    // socket.on("typing", (data: { conversationId: string; userId: string; userName: string }) => {
-    //   if (data.conversationId === activeConversation && data.userId !== me?.publicId) {
-    //     setTypingUsers((prev) => {
-    //       if (!prev.includes(data.userId)) return [...prev, data.userId];
-    //       return prev;
-    //     });
-    //     setTimeout(() => {
-    //       setTypingUsers((prev) => prev.filter((id) => id !== data.userId));
-    //     }, 3000);
-    //   }
-    // });
-
     // Cleanup
     return () => {
       socket.off("connect");
@@ -226,11 +232,10 @@ export default function ChatPage() {
       socket.off("message:active");
       socket.off("message:sidebar");
       socket.off("conversation:new");
-      // socket.off("typing");
     };
   }, [activeConversation, me?.publicId, mutateConversations, mutateMessages]);
 
-  // Join conversation room for typing events
+  // Join conversation room
   useEffect(() => {
     if (activeConversation && me?.publicId) {
       socket.emit("join", { conversationId: activeConversation });
@@ -241,17 +246,6 @@ export default function ChatPage() {
       }
     };
   }, [activeConversation, me?.publicId]);
-
-  // Emit typing event
-  // const handleTyping = () => {
-  //   if (activeConversation && me?.publicId) {
-  //     socket.emit("typing", {
-  //       conversationId: activeConversation,
-  //       userId: me.publicId,
-  //       userName: me.name,
-  //     });
-  //   }
-  // };
 
   async function startConversation(userPublicId: string) {
     try {
@@ -277,6 +271,7 @@ export default function ChatPage() {
       sender: me,
       content: newMessage,
       createdAt: new Date().toISOString(),
+      status: "SENT",
     };
 
     mutateMessages((old = []) => [...old, tempMessage], false);
@@ -343,13 +338,26 @@ export default function ChatPage() {
   };
 
   // Mark conversation as read
-  const openConversation = (publicId: string) => {
+  const openConversation = async (publicId: string) => {
     setActiveConversation(publicId);
-    mutateConversations((old = []) =>
-      old.map((c) =>
-        c.publicId === publicId ? { ...c, unreadCount: 0 } : c
-      )
-    );
+
+    // Call API to mark messages as read
+    try {
+      await fetch(`/api/conversations/${publicId}/read`, {
+        method: "POST",
+        credentials: "include",
+      });
+      mutateConversations(
+        (old = []) =>
+          old.map((c) =>
+            c.publicId === publicId ? { ...c, unreadCount: 0 } : c
+          ),
+        false
+      );
+    } catch (err) {
+      console.error("Failed to mark messages as read:", err);
+      toast.error("Failed to mark messages as read");
+    }
   };
 
   // Auto-scroll messages
@@ -357,19 +365,17 @@ export default function ChatPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Filter + sort conversations
+  // Filter + sort conversations (fixed to handle undefined conversations)
   const filteredConversations =
-    conversations
-      ?.filter((c) => {
-        const participantName =
-          c.participants?.find((p) => p.publicId !== me?.publicId)?.name || "";
-        return participantName.toLowerCase().includes(searchTerm.toLowerCase());
-      })
-      .sort(
-        (a, b) =>
-          new Date(b.lastMessage?.createdAt || b.updatedAt).getTime() -
-          new Date(a.lastMessage?.createdAt || a.updatedAt).getTime()
-      ) || [];
+    (conversations ?? []).filter((c) => {
+      const participantName =
+        c.participants?.find((p) => p.publicId !== me?.publicId)?.name || "";
+      return participantName.toLowerCase().includes(searchTerm.toLowerCase());
+    }).sort(
+      (a, b) =>
+        new Date(b.lastMessage?.createdAt || b.updatedAt).getTime() -
+        new Date(a.lastMessage?.createdAt || a.updatedAt).getTime()
+    ) || [];
 
   const activeConvObj = conversations?.find(
     (c) => c.publicId === activeConversation
@@ -385,7 +391,7 @@ export default function ChatPage() {
         u.name.toLowerCase().includes(userSearch.toLowerCase())
     ) || [];
 
-  // DP or Initial 
+  // DP or Initial
   const profilePic = (user: User | null, size: number = 40) => {
     if (!user) return null;
     if (user.profilePic) {
@@ -497,16 +503,6 @@ export default function ChatPage() {
               isOwnMessage={m.sender?.publicId === me?.publicId}
             />
           ))}
-          {/* {typingUsers.length > 0 && (
-            <div className="text-xs text-zinc-400 italic">
-              {typingUsers
-                .map((userId) =>
-                  users.find((u) => u.publicId === userId)?.name || "Someone"
-                )
-                .join(", ")}{" "}
-              is typing...
-            </div> 
-           )} */}
           <div ref={messagesEndRef} />
         </div>
 
@@ -516,10 +512,7 @@ export default function ChatPage() {
               type="text"
               className="flex-1 rounded bg-zinc-900 p-2 outline-none text-zinc-100"
               value={newMessage}
-              onChange={(e) => {
-                setNewMessage(e.target.value);
-                // handleTyping();
-              }}
+              onChange={(e) => setNewMessage(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
               placeholder="Type a message..."
             />
@@ -573,7 +566,7 @@ export default function ChatPage() {
           width: 6px;
         }
         .custom-scrollbar::-webkit-scrollbar-track {
-          background: transparent;
+          background: black;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb {
           background-color: #71717a;

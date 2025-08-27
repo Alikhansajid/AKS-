@@ -27,6 +27,12 @@ enum PaymentStatus {
   FAILED
 }
 
+enum MessageStatus {
+  SENT
+  DELIVERED
+  READ
+}
+
 model User {
   id         Int       @id @default(autoincrement())
   publicId   String    @unique @default(cuid()) @map("public_id")
@@ -183,7 +189,7 @@ model Payment {
 
 model Conversation {
   id           String               @id @default(cuid())
-  publicId     String?              @unique @default(uuid()) // make optional
+  publicId     String?              @unique @default(uuid())
   createdAt    DateTime             @default(now()) @map("created_at")
   updatedAt    DateTime             @updatedAt @map("updated_at")
   deletedAt    DateTime?            @map("deleted_at")
@@ -195,14 +201,15 @@ model Conversation {
 }
 
 model Message {
-  id             String    @id @default(cuid())
-  publicId       String?   @unique @default(uuid()) // make optional
+  id             String        @id @default(cuid())
+  publicId       String?       @unique @default(uuid())
   conversationId String
   senderId       Int
-  text           String? // make optional
-  createdAt      DateTime  @default(now()) @map("created_at")
-  updatedAt      DateTime  @updatedAt @map("updated_at")
-  deletedAt      DateTime? @map("deleted_at")
+  text           String?
+  status         MessageStatus @default(SENT) // Added status field
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+  deletedAt      DateTime?     @map("deleted_at")
 
   conversation Conversation @relation(fields: [conversationId], references: [id])
   sender       User         @relation(fields: [senderId], references: [id])
@@ -220,6 +227,7 @@ model UserOnConversation {
   createdAt      DateTime     @default(now()) @map("created_at")
   updatedAt      DateTime     @updatedAt @map("updated_at")
   deletedAt      DateTime?    @map("deleted_at")
+  lastRead       DateTime?    @map("last_read")
 
   @@id([userId, conversationId])
   @@index([userId])

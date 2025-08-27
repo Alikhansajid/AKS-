@@ -233,6 +233,7 @@ exports.Prisma.MessageScalarFieldEnum = {
   conversationId: 'conversationId',
   senderId: 'senderId',
   text: 'text',
+  status: 'status',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   deletedAt: 'deletedAt'
@@ -243,7 +244,8 @@ exports.Prisma.UserOnConversationScalarFieldEnum = {
   conversationId: 'conversationId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
-  deletedAt: 'deletedAt'
+  deletedAt: 'deletedAt',
+  lastRead: 'lastRead'
 };
 
 exports.Prisma.SortOrder = {
@@ -288,6 +290,12 @@ exports.PaymentStatus = exports.$Enums.PaymentStatus = {
   PENDING: 'PENDING',
   SUCCESS: 'SUCCESS',
   FAILED: 'FAILED'
+};
+
+exports.MessageStatus = exports.$Enums.MessageStatus = {
+  SENT: 'SENT',
+  DELIVERED: 'DELIVERED',
+  READ: 'READ'
 };
 
 exports.Prisma.ModelName = {

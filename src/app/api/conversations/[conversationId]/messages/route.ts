@@ -90,6 +90,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ con
         text: content,
         conversation: { connect: { publicId: conversationId } },
         sender: { connect: { id: sender.id } },
+        status: "SENT", 
       },
       include: {
         sender: {
@@ -113,6 +114,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ con
       sender: message.sender,
       content: message.text,
       createdAt: message.createdAt.toISOString(),
+      status: message.status, // Include status in the response
     };
 
     try {
@@ -132,3 +134,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ con
     return NextResponse.json({ error: "Failed to create message" }, { status: 500 });
   }
 }
+
+
+
+
