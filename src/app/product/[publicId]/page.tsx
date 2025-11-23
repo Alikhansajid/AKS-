@@ -75,47 +75,7 @@ const addToCartFetcher = async (
   return { success: true };
 };
 
-// ---------- Shared Cart Hook ----------
-export function useCart() {
-  const { data, error, isLoading } = useSWR<CartItem[]>(
-    '/api/cart',
-    fetcher,
-    { fallbackData: [] }
-  );
-
-  return {
-    cart: data ?? [],
-    isLoading,
-    isError: !!error,
-  };
-}
-
-// ---------- Cart Badge ----------
-export function CartBadge() {
-  const { cart } = useCart();
-  const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-
-  return (
-    <Link href="/cart" className="relative">
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        className="h-7 w-7 text-neutral-700"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-      >
-        <path d="M3 3h2l.4 2M7 13h10l4-8H5.4" />
-        <circle cx="9" cy="21" r="1" />
-        <circle cx="20" cy="21" r="1" />
-      </svg>
-      {totalItems > 0 && (
-        <span className="absolute -top-1 -right-2 bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">
-          {totalItems}
-        </span>
-      )}
-    </Link>
-  );
-}
+// Note: useCart and CartBadge removed - not used in this file
 
 // ---------- Product Detail Page ----------
 export default function ProductDetail() {
