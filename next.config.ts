@@ -28,7 +28,6 @@ import type { Configuration } from 'webpack';
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   // Optimize for production
-  swcMinify: true,
   compress: true,
   images: {
     remotePatterns: [

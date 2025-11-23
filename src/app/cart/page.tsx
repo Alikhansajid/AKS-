@@ -328,8 +328,9 @@ export default function CartPage() {
 
       setAppliedCoupon(coupon);
       toast.success('Coupon applied');
-    } catch (err: any) {
-      toast.error(err.message || 'Invalid coupon');
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Invalid coupon';
+      toast.error(errorMessage);
     }
   };
 

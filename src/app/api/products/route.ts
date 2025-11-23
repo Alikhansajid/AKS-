@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
 // GET: Fetch all products with caching and optimization
-export async function GET(request: Request) {
+export async function GET() {
   try {
     // Fetch products with optimized query
     const products = await prisma.product.findMany({
