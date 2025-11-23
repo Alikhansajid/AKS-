@@ -70,14 +70,15 @@ interface ConversationResponse {
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ publicId: string }> }) {
+  let publicId: string | undefined;
   try {
     const session = await getSession(req) as Session;
     if (!session?.user?.publicId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { publicId } = await params;
-    const publicIdForError = publicId; // Store for catch block
+    const resolvedParams = await params;
+    publicId = resolvedParams.publicId;
     const { allowAllMessages } = await req.json();
 
     // Validate input
@@ -183,7 +184,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ pu
     console.error("Error updating group permissions:", {
       error: err instanceof Error ? err.message : String(err),
       stack: err instanceof Error ? err.stack : undefined,
-      publicId: publicIdForError,
+      publicId: publicId || 'unknown',
     });
     return NextResponse.json(
       { error: "Failed to update group permissions", details: err instanceof Error ? err.message : String(err) },
