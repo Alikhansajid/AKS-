@@ -67,14 +67,15 @@ interface ConversationResponse {
   updatedAt: string;
 }
 
-export async function POST(req: NextRequest, { params }: { params: { publicId: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ publicId: string }> }) {
   try {
     const session = await getSession(req) as Session;
     if (!session?.user?.publicId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { publicId } = params;
+    const { publicId } = await params;
+    const publicIdForError = publicId; // Store for catch block
     const { text } = await req.json();
 
     if (!text || typeof text !== "string" || text.trim().length === 0) {
@@ -219,7 +220,7 @@ export async function POST(req: NextRequest, { params }: { params: { publicId: s
     console.error("Error sending group message:", {
       error: err instanceof Error ? err.message : String(err),
       stack: err instanceof Error ? err.stack : undefined,
-      publicId: params.publicId,
+      publicId: publicIdForError,
     });
     return NextResponse.json(
       { error: "Failed to send group message", details: err instanceof Error ? err.message : String(err) },

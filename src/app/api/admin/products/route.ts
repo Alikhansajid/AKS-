@@ -505,7 +505,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { publicId: string } }) {
+export async function PUT(request: NextRequest) {
   try {
     const session = await getSession(request);
     if (!session.user || session.user.role !== 'ADMIN') {
@@ -513,6 +513,7 @@ export async function PUT(request: NextRequest, { params }: { params: { publicId
     }
 
     const formData = await request.formData();
+    const publicId = formData.get('publicId') as string;
     const name = formData.get('name') as string;
     const price = parseFloat(formData.get('price') as string);
     const quantity = parseInt(formData.get('quantity') as string);
@@ -521,7 +522,7 @@ export async function PUT(request: NextRequest, { params }: { params: { publicId
     const existingImages = JSON.parse(existingImagesJson) as { id: number; url: string; productId: number }[];
     const newImages = formData.getAll('images') as File[];
 
-    if (!name || isNaN(price) || isNaN(quantity) || isNaN(categoryId)) {
+    if (!publicId || !name || isNaN(price) || isNaN(quantity) || isNaN(categoryId)) {
       return NextResponse.json({ error: 'Invalid input data' }, { status: 400 });
     }
 
@@ -536,7 +537,7 @@ export async function PUT(request: NextRequest, { params }: { params: { publicId
     }
 
     const product = await prisma.product.findUnique({
-      where: { publicId: params.publicId, deletedAt: null },
+      where: { publicId, deletedAt: null },
       include: { images: true },
     });
 
@@ -545,7 +546,7 @@ export async function PUT(request: NextRequest, { params }: { params: { publicId
     }
 
     await prisma.product.update({
-      where: { publicId: params.publicId },
+      where: { publicId },
       data: {
         name,
         price,
@@ -571,7 +572,7 @@ export async function PUT(request: NextRequest, { params }: { params: { publicId
         try {
           await Promise.all(
             publicIdsToDelete.map(id =>
-              cloudinary.uploader.destroy(`products/${params.publicId}/${id}`, { resource_type: 'image' })
+              cloudinary.uploader.destroy(`products/${publicId}/${id}`, { resource_type: 'image' })
             )
           );
           console.log('Deleted old images from Cloudinary');
@@ -608,7 +609,7 @@ export async function PUT(request: NextRequest, { params }: { params: { publicId
                     const result = await cloudinary.uploader.upload(
                       `data:image/jpeg;base64,${buffer.toString('base64')}`,
                       {
-                        folder: `products/${params.publicId}`,
+                        folder: `products/${publicId}`,
                         public_id: `${file.name.split('.')[0]}_${Date.now()}`,
                         overwrite: false,
                         resource_type: 'image',
@@ -654,7 +655,7 @@ export async function PUT(request: NextRequest, { params }: { params: { publicId
     }
 
     const updatedProduct = await prisma.product.findUnique({
-      where: { publicId: params.publicId },
+      where: { publicId },
       include: {
         category: { select: { name: true } },
         images: { select: { url: true } },

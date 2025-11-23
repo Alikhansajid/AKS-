@@ -5,7 +5,7 @@ import { getSession } from '@/lib/session';
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { publicId: string } }
+  { params }: { params: Promise<{ publicId: string }> }
 ) {
   try {
     const session = await getSession(request);
@@ -14,7 +14,7 @@ export async function PUT(
     }
 
     const { name, email, role, phone } = await request.json();
-    const { publicId } = params;
+    const { publicId } = await params;
 
     // Validate
     if (!name || !email || !role) {
@@ -66,7 +66,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { publicId: string } }
+  { params }: { params: Promise<{ publicId: string }> }
 ) {
   try {
     const session = await getSession(request);
@@ -74,7 +74,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized access' }, { status: 401 });
     }
 
-    const { publicId } = params;
+    const { publicId } = await params;
 
     const user = await prisma.user.findUnique({
       where: { publicId, deletedAt: null },

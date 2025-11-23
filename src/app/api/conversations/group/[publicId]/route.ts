@@ -206,7 +206,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: { publicId: string } }) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ publicId: string }> }) {
   try {
     const session = await getSession(req) as Session;
     if (!session?.user?.publicId) {
@@ -217,7 +217,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { publicId: 
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { publicId } = params;
+    const { publicId } = await params;
+    const publicIdForError = publicId; // Store for catch block
     const formData = await req.formData();
     const name = formData.get("name") as string | undefined;
     const description = formData.get("description") as string | undefined;
@@ -281,7 +282,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { publicId: 
     console.error("Error updating group conversation:", {
       error: err instanceof Error ? err.message : String(err),
       stack: err instanceof Error ? err.stack : undefined,
-      publicId: params.publicId,
+      publicId: publicIdForError,
     });
     return NextResponse.json(
       { error: "Failed to update group conversation", details: err instanceof Error ? err.message : String(err) },

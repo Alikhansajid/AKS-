@@ -2,7 +2,7 @@ import { NextResponse, NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/session';
 
-export async function PUT(request: NextRequest, { params }: { params: { publicId: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ publicId: string }> }) {
   try {
     const session = await getSession(request);
     if (!session.user || session.user.role !== 'ADMIN') {
@@ -11,7 +11,7 @@ export async function PUT(request: NextRequest, { params }: { params: { publicId
     }
 
     const { status } = await request.json();
-    const { publicId } = params;
+    const { publicId } = await params;
 
     if (!status || !['PENDING', 'SHIPPED', 'DELIVERED', 'CANCELLED'].includes(status)) {
       return NextResponse.json({ error: 'Invalid status' }, { status: 400 });

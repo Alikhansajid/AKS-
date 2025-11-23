@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma';
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { publicId: string } }
+  { params }: { params: Promise<{ publicId: string }> }
 ) {
   try {
     const session = await getSession(request);
@@ -12,7 +12,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { publicId } = params;
+    const { publicId } = await params;
 
     const category = await prisma.category.findUnique({
       where: { publicId },

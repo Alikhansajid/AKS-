@@ -66,7 +66,7 @@ interface ConversationResponse {
   updatedAt: string;
 }
 
-export async function POST(req: NextRequest, { params }: { params: { publicId: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ publicId: string }> }) {
   try {
     const session = await getSession(req) as Session;
     if (!session?.user?.publicId) {
@@ -77,7 +77,8 @@ export async function POST(req: NextRequest, { params }: { params: { publicId: s
       return NextResponse.json({ error: "Forbidden: Only system admins can manage group admins" }, { status: 403 });
     }
 
-    const { publicId } = params;
+    const { publicId } = await params;
+    const publicIdForError = publicId; // Store for catch block
     const { userPublicId, action } = await req.json();
 
     if (!userPublicId || !["add", "remove"].includes(action)) {
@@ -181,7 +182,7 @@ export async function POST(req: NextRequest, { params }: { params: { publicId: s
     console.error("Error managing group admin:", {
       error: err instanceof Error ? err.message : String(err),
       stack: err instanceof Error ? err.stack : undefined,
-      publicId: params.publicId,
+      publicId: publicIdForError,
       userPublicId: (await req.json().catch(() => ({}))).userPublicId,
       action: (await req.json().catch(() => ({}))).action,
     });
