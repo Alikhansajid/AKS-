@@ -122,32 +122,55 @@ export default function AdminProduct() {
   });
 
   // ✅ Add product
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (images.length > 4) {
-      toast.error('Maximum 4 images allowed.');
-      return;
+// src/app/admin/products/page.tsx
+// ... (other imports and code remain the same)
+
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (images.length > 4) {
+    toast.error('Maximum 4 images allowed.');
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('name', name);
+  formData.append('price', price);
+  formData.append('quantity', quantity);
+  formData.append('categoryId', categoryId);
+  images.forEach(file => {
+    console.log('Selected file:', file.name, file.size, file.type); // Debug log
+    formData.append('images', file);
+  });
+
+  try {
+    const res = await fetch('/api/admin/products', { method: 'POST', body: formData });
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.error || 'Failed to add product');
     }
 
-    const formData = new FormData();
-    formData.append('name', name);
-    formData.append('price', price);
-    formData.append('quantity', quantity);
-    formData.append('categoryId', categoryId);
-    images.forEach(file => formData.append('images', file));
-
-    try {
-      const res = await fetch('/api/admin/products', { method: 'POST', body: formData });
-      if (!res.ok) throw new Error();
-
-      mutate('/api/admin/products'); // ✅ Refresh list
-      setName(''); setPrice(''); setQuantity(''); setCategoryId(''); setImages([]);
-      setShowAddModal(false);
-      toast.success('Product added successfully');
-    } catch {
-      toast.error('Failed to add product');
+    mutate('/api/admin/products');
+    setName('');
+    setPrice('');
+    setQuantity('');
+    setCategoryId('');
+    setImages([]);
+    setShowAddModal(false);
+    toast.success('Product added successfully');
+  } catch (err) {
+    if (err instanceof Error) {
+      if (err.message.includes('images')) {
+        toast.error('Image upload failed. Product created without images.');
+      } else {
+        toast.error(err.message || 'Failed to add product');
+      }
+    } else {
+      toast.error('Unexpected error occurred');
     }
-  };
+  }
+};
+
+// ... (rest of the component remains the same)
 
   // ✅ Delete product
   const handleDelete = async (publicId: string) => {

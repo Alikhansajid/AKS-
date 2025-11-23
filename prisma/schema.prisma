@@ -1,6 +1,6 @@
 generator client {
   provider = "prisma-client-js"
-  output   = "./src/generated/prisma"
+  output   = "../node_modules/.prisma/client"
 }
 
 datasource db {
@@ -52,7 +52,7 @@ model User {
   carts             Cart[]
   orders            Order[]    @relation("CustomerOrders")
   assignedOrders    Order[]    @relation("RiderAssignedOrders")
-  conversations     UserOnConversation[]
+  participants      Participant[]
   sentMessages      Message[]
 
   @@map("user")
@@ -74,8 +74,11 @@ model Category {
 
   products Product[]
 
+  @@index([deletedAt])
+  @@index([parentId])
   @@map("category")
 }
+
 
 model Product {
   id          Int       @id @default(autoincrement())
@@ -83,12 +86,15 @@ model Product {
   slug        String    @unique
   name        String
   price       Float
-  quantity    Int
+  quantity    Int?
   categoryId  Int
   updatedById Int?
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
   deletedAt   DateTime? @map("deleted_at")
+  isfetch      Boolean   @default(false)
+  sourceUrl   String?
+  details     Json?
 
   category    Category  @relation(fields: [categoryId], references: [id])
   updatedBy   User?     @relation("UpdatedByUser_Product", fields: [updatedById], references: [id])
@@ -96,6 +102,9 @@ model Product {
   cartItems   CartItem[]
   orderItems  OrderItem[]
 
+  @@index([deletedAt])
+  @@index([categoryId])
+  @@index([publicId, deletedAt])
   @@map("product")
 }
 
@@ -120,6 +129,9 @@ model Cart {
 
   user  User      @relation(fields: [userId], references: [id])
   items CartItem[]
+
+  couponId Int? @map("coupon_id")
+  coupon   Coupon? @relation(fields: [couponId], references: [id], name: "CartToCoupon")
 
   @@map("cart")
 }
@@ -187,26 +199,13 @@ model Payment {
   @@map("payment")
 }
 
-model Conversation {
-  id            String                @id @default(cuid())
-  publicId      String?               @unique @default(uuid())
-  createdAt     DateTime              @default(now()) @map("created_at")
-  updatedAt     DateTime              @updatedAt @map("updated_at")
-  deletedAt     DateTime?             @map("deleted_at")
-  participants  UserOnConversation[]
-  messages      Message[]
-
-  @@index([publicId])
-  @@map("conversation")
-}
-
 model Message {
   id             String        @id @default(cuid())
   publicId       String?       @unique @default(uuid())
   conversationId String
   senderId       Int
   text           String?
-  status         MessageStatus @default(SENT) // Added status field
+  status         MessageStatus @default(SENT)
   createdAt      DateTime      @default(now()) @map("created_at")
   updatedAt      DateTime      @updatedAt @map("updated_at")
   deletedAt      DateTime?     @map("deleted_at")
@@ -219,18 +218,64 @@ model Message {
   @@map("message")
 }
 
-model UserOnConversation {
-  userId         Int
+model Conversation {
+  id              String        @id @default(cuid())
+  publicId        String?       @unique
+  isGroup         Boolean       @default(false)
+  name            String?
+  description     String?
+  profilePic      String?
+  allowAllMessages Boolean
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  deletedAt       DateTime?
+  participants    Participant[]
+  messages        Message[]
+
+  @@index([publicId])
+}
+
+model Participant {
+  userId         String
   conversationId String
-  user           User          @relation(fields: [userId], references: [id])
-  conversation   Conversation  @relation(fields: [conversationId], references: [id])
-  createdAt      DateTime      @default(now()) @map("created_at")
-  updatedAt      DateTime      @updatedAt @map("updated_at")
-  deletedAt      DateTime?     @map("deleted_at")
-  lastRead       DateTime?     @map("last_read")
+  user           User         @relation(fields: [userId], references: [publicId])
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  isAdmin        Boolean      @default(false)
+  lastRead       DateTime?
 
   @@id([userId, conversationId])
   @@index([userId])
   @@index([conversationId])
-  @@map("user_on_conversation")
+  @@index([userId, conversationId])
 }
+
+model Coupon {
+  id          Int      @id @default(autoincrement())
+  publicId    String   @unique
+  code        String   @unique
+  discountType String
+  discountValue Float
+  minOrderValue Float?
+  maxUses     Int?
+  usedCount   Int      @default(0)
+  startDate   DateTime?
+  expiryDate  DateTime?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  carts Cart[] @relation("CartToCoupon")
+
+  @@map("coupon")
+}
+
+
+
+
+
+
+
+
+
+

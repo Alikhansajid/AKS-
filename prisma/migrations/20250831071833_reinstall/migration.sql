@@ -2,10 +2,19 @@
 CREATE TYPE "public"."Role" AS ENUM ('ADMIN', 'CUSTOMER', 'RIDER');
 
 -- CreateEnum
+CREATE TYPE "public"."GroupRole" AS ENUM ('GROUP_ADMIN', 'MEMBER');
+
+-- CreateEnum
 CREATE TYPE "public"."OrderStatus" AS ENUM ('PENDING', 'SHIPPED', 'DELIVERED', 'CANCELLED');
 
 -- CreateEnum
 CREATE TYPE "public"."PaymentStatus" AS ENUM ('PENDING', 'SUCCESS', 'FAILED');
+
+-- CreateEnum
+CREATE TYPE "public"."MessageStatus" AS ENUM ('SENT', 'DELIVERED', 'READ');
+
+-- CreateEnum
+CREATE TYPE "public"."ConversationType" AS ENUM ('DIRECT', 'GROUP');
 
 -- CreateTable
 CREATE TABLE "public"."user" (
@@ -133,6 +142,50 @@ CREATE TABLE "public"."payment" (
     CONSTRAINT "payment_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "public"."conversation" (
+    "id" TEXT NOT NULL,
+    "publicId" TEXT,
+    "type" "public"."ConversationType" NOT NULL DEFAULT 'DIRECT',
+    "name" TEXT,
+    "description" TEXT,
+    "profile_pic" TEXT,
+    "allowAllMessages" BOOLEAN NOT NULL DEFAULT true,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+    "deleted_at" TIMESTAMP(3),
+
+    CONSTRAINT "conversation_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."message" (
+    "id" TEXT NOT NULL,
+    "publicId" TEXT,
+    "conversationId" TEXT NOT NULL,
+    "senderId" INTEGER NOT NULL,
+    "text" TEXT,
+    "status" "public"."MessageStatus" NOT NULL DEFAULT 'SENT',
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+    "deleted_at" TIMESTAMP(3),
+
+    CONSTRAINT "message_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."user_on_conversation" (
+    "userId" INTEGER NOT NULL,
+    "conversationId" TEXT NOT NULL,
+    "role" "public"."GroupRole" NOT NULL DEFAULT 'MEMBER',
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+    "deleted_at" TIMESTAMP(3),
+    "last_read" TIMESTAMP(3),
+
+    CONSTRAINT "user_on_conversation_pkey" PRIMARY KEY ("userId","conversationId")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "user_public_id_key" ON "public"."user"("public_id");
 
@@ -165,6 +218,27 @@ CREATE UNIQUE INDEX "order_public_id_key" ON "public"."order"("public_id");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "payment_orderId_key" ON "public"."payment"("orderId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "conversation_publicId_key" ON "public"."conversation"("publicId");
+
+-- CreateIndex
+CREATE INDEX "conversation_publicId_idx" ON "public"."conversation"("publicId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "message_publicId_key" ON "public"."message"("publicId");
+
+-- CreateIndex
+CREATE INDEX "message_conversationId_idx" ON "public"."message"("conversationId");
+
+-- CreateIndex
+CREATE INDEX "message_senderId_idx" ON "public"."message"("senderId");
+
+-- CreateIndex
+CREATE INDEX "user_on_conversation_userId_idx" ON "public"."user_on_conversation"("userId");
+
+-- CreateIndex
+CREATE INDEX "user_on_conversation_conversationId_idx" ON "public"."user_on_conversation"("conversationId");
 
 -- AddForeignKey
 ALTER TABLE "public"."category" ADD CONSTRAINT "category_parent_id_fkey" FOREIGN KEY ("parent_id") REFERENCES "public"."category"("id") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -204,3 +278,15 @@ ALTER TABLE "public"."order_item" ADD CONSTRAINT "order_item_productId_fkey" FOR
 
 -- AddForeignKey
 ALTER TABLE "public"."payment" ADD CONSTRAINT "payment_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "public"."order"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."message" ADD CONSTRAINT "message_conversationId_fkey" FOREIGN KEY ("conversationId") REFERENCES "public"."conversation"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."message" ADD CONSTRAINT "message_senderId_fkey" FOREIGN KEY ("senderId") REFERENCES "public"."user"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."user_on_conversation" ADD CONSTRAINT "user_on_conversation_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."user"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."user_on_conversation" ADD CONSTRAINT "user_on_conversation_conversationId_fkey" FOREIGN KEY ("conversationId") REFERENCES "public"."conversation"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

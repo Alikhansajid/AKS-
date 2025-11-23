@@ -65,14 +65,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ con
     }
 
     // Update lastRead timestamp for the user in this conversation
-    const user = await prisma.user.findUnique({ where: { publicId: session.user!.publicId } });
-    if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
-    await prisma.userOnConversation.update({
+    await prisma.participant.update({
       where: {
         userId_conversationId: {
-          userId: user.id,
+          userId: session.user!.publicId, // Use publicId (String) instead of user.id
           conversationId: conversation.id,
         },
       },
@@ -92,38 +88,42 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ con
     // Emit Socket.IO event to update unread count for participants
     try {
       const io = getServerSocket();
-      const updatedConversation = await prisma.conversation.findUnique({
-        where: { publicId: conversationId },
-        include: {
-          participants: { include: { user: true } },
-          messages: {
-            orderBy: { createdAt: "desc" },
-            take: 1,
-            include: { sender: true },
+      if (!io) {
+        console.warn("🔌 Skipping Socket.IO notifications due to uninitialized server");
+      } else {
+        const updatedConversation = await prisma.conversation.findUnique({
+          where: { publicId: conversationId },
+          include: {
+            participants: { include: { user: true } },
+            messages: {
+              orderBy: { createdAt: "desc" },
+              take: 1,
+              include: { sender: true },
+            },
           },
-        },
-      }) as Conversation | null;
+        }) as Conversation | null;
 
-      if (updatedConversation) {
-        const formattedConversation = {
-          publicId: updatedConversation.publicId!,
-          participants: updatedConversation.participants.map((p) => p.user),
-          lastMessage: updatedConversation.messages[0]
-            ? {
-                publicId: updatedConversation.messages[0].publicId,
-                conversationPublicId: updatedConversation.publicId!,
-                sender: updatedConversation.messages[0].sender,
-                content: updatedConversation.messages[0].text,
-                createdAt: updatedConversation.messages[0].createdAt,
-              }
-            : null,
-          unreadCount: 0, // Set to 0 since messages are now read
-          updatedAt: updatedConversation.updatedAt,
-        };
+        if (updatedConversation) {
+          const formattedConversation = {
+            publicId: updatedConversation.publicId!,
+            participants: updatedConversation.participants.map((p) => p.user),
+            lastMessage: updatedConversation.messages[0]
+              ? {
+                  publicId: updatedConversation.messages[0].publicId,
+                  conversationPublicId: updatedConversation.publicId!,
+                  sender: updatedConversation.messages[0].sender,
+                  content: updatedConversation.messages[0].text,
+                  createdAt: updatedConversation.messages[0].createdAt,
+                }
+              : null,
+            unreadCount: 0,
+            updatedAt: updatedConversation.updatedAt,
+          };
 
-        updatedConversation.participants.forEach((p) => {
-          io.to(p.user.publicId).emit("message:sidebar", formattedConversation);
-        });
+          updatedConversation.participants.forEach((p) => {
+            io.to(p.user.publicId).emit("message:sidebar", formattedConversation);
+          });
+        }
       }
     } catch (e) {
       console.error("Failed to emit Socket.IO events:", e);

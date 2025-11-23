@@ -1,44 +1,4 @@
-// import { NextResponse, NextRequest } from 'next/server';
-// import { prisma } from '@/lib/prisma';
-// import { getSession } from '@/lib/session';
-
-// export async function GET(request: NextRequest) {
-//   try {
-//     const session = await getSession(request);
-//     if (!session.user || session.user.role !== 'ADMIN') {
-//       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-//     }
-
-//     const users = await prisma.user.findMany({
-//       where: { deletedAt: null },
-//       select: {
-//         id: true,
-//         publicId: true,
-//         name: true,
-//         email: true,
-//         phone: true,
-//         role: true,
-//         createdAt: true,
-//         updatedAt: true,
-//         deletedAt: true,
-//       },
-//     });
-
-//     return NextResponse.json(users);
-//   } catch (error: unknown) {
-//     console.error('Error fetching users:', error);
-//     return NextResponse.json({ error: 'Something went wrong' }, { status: 500 });
-//   }
-// }
-
-
-
-
-
-
-
-
-
+// app/api/admin/users/route.ts
 import { NextResponse, NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/session';
@@ -46,9 +6,12 @@ import { getSession } from '@/lib/session';
 export async function GET(request: NextRequest) {
   try {
     const session = await getSession(request);
-    if (!session.user || session.user.role !== 'ADMIN') {
+    if (!session.user) {
       return NextResponse.json({ error: 'Unauthorized access' }, { status: 401 });
     }
+
+    // Allow all authenticated users to fetch users, but admins can see more details
+    const isAdmin = session.user.role === 'ADMIN';
 
     const users = await prisma.user.findMany({
       where: { deletedAt: null },
@@ -56,13 +19,13 @@ export async function GET(request: NextRequest) {
         id: true,
         publicId: true,
         name: true,
-        email: true,
-        phone: true,
+        email: isAdmin, // Only include email for admins
+        phone: isAdmin, // Only include phone for admins
         role: true,
-        details: true,
-        createdAt: true,
-        updatedAt: true,
-        deletedAt: true,
+        profilePic: true, // Include profilePic for chat UI
+        createdAt: isAdmin, // Only include for admins
+        updatedAt: isAdmin, // Only include for admins
+        deletedAt: isAdmin, // Only include for admins
       },
     });
 

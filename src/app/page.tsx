@@ -7,14 +7,13 @@ import useSWR from 'swr';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Thumbs } from 'swiper/modules';
 import { Swiper as SwiperInstance } from 'swiper';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/thumbs';
 import 'react-toastify/dist/ReactToastify.css';
 
 
-/* ---------- Types ---------- */
 interface ProductImage {
   id: number;
   url: string;
@@ -54,15 +53,43 @@ type ApiResponse = Product[];
 
 /* ---------- SWR fetcher ---------- */
 const fetcher = async (url: string): Promise<ApiResponse> => {
-  const res = await fetch(url, { headers: { 'Cache-Control': 'no-store' } });
+  const res = await fetch(url, { 
+    next: { revalidate: 60 }, // Revalidate every 60 seconds
+    headers: { 
+      'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120',
+    } 
+  });
   if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
   return res.json();
 };
 
+/* ---------- Image Component with Error Handling ---------- */
+const ProductImage = ({ src, alt, ...props }: { src: string; alt: string } & React.ComponentProps<typeof Image>) => {
+  const [imgSrc, setImgSrc] = useState(src);
+
+  const handleError = useCallback(() => {
+    console.error(`Failed to load image: ${src}`);
+    setImgSrc('/images/placeholder.jpg');
+  }, [src]);
+
+  return (
+    <Image
+      {...props}
+      src={imgSrc}
+      alt={alt}
+      onError={handleError}
+      className="object-cover rounded-lg"
+      sizes="(max-width: 768px) 100vw, 25vw"
+    />
+  );
+};
+
 export default function Home() {
   const { data, error, isLoading } = useSWR<ApiResponse>('/api/products', fetcher, {
-    revalidateOnFocus: true,
+    revalidateOnFocus: false, // Disable to reduce unnecessary requests
     revalidateOnReconnect: true,
+    dedupingInterval: 60000, // Dedupe requests within 60 seconds
+    refreshInterval: 0, // Disable auto-refresh
   });
 
   const [search, setSearch] = useState('');
@@ -94,8 +121,11 @@ export default function Home() {
         },
       images:
         p.images && p.images.length > 0
-          ? p.images.map((img) => ({ ...img, url: img.url || '/placeholder.jpg' }))
-          : [{ id: 0, url: '/placeholder.jpg', createdAt: new Date().toISOString() }],
+          ? p.images.map((img) => ({
+              ...img,
+              url: img.url && img.url.startsWith('http') ? img.url : '/images/placeholder.jpg',
+            }))
+          : [{ id: 0, url: '/images/placeholder.jpg', createdAt: new Date().toISOString() }],
     })) ?? [];
 
   const categories = ['All', ...Array.from(new Set(products.map((p) => p.category.name)))];
@@ -195,13 +225,7 @@ export default function Home() {
                           {product.images.map((img, idx) => (
                             <SwiperSlide key={idx}>
                               <div className="relative w-full h-48">
-                                <Image
-                                  src={img.url || '/placeholder.jpg'}
-                                  alt={product.name}
-                                  fill
-                                  className="object-cover rounded-lg"
-                                  sizes="(max-width: 768px) 100vw, 25vw"
-                                />
+                                <ProductImage src={img.url} alt={product.name} fill />
                               </div>
                             </SwiperSlide>
                           ))}
@@ -218,11 +242,10 @@ export default function Home() {
                           {product.images.map((img, idx) => (
                             <SwiperSlide key={idx}>
                               <div className="relative w-full h-16 rounded overflow-hidden border border-gray-100">
-                                <Image
-                                  src={img.url || '/placeholder.jpg'}
+                                <ProductImage
+                                  src={img.url}
                                   alt={`${product.name} thumbnail ${idx + 1}`}
                                   fill
-                                  className="object-cover rounded cursor-pointer"
                                 />
                               </div>
                             </SwiperSlide>
@@ -230,7 +253,9 @@ export default function Home() {
                         </Swiper>
                       </>
                     ) : (
-                      <div className="flex items-center justify-center h-full text-gray-400 text-sm">No image</div>
+                      <div className="relative w-full h-48">
+                        <ProductImage src="/images/placeholder.jpg" alt="No image" fill />
+                      </div>
                     )}
                   </div>
 
@@ -288,7 +313,6 @@ export default function Home() {
           transition: transform 120ms ease;
         }
       `}</style>
-      
     </div>
   );
 }

@@ -28,7 +28,7 @@ async function main() {
   const images = [
     "https://res.cloudinary.com/dh1vlqndx/image/upload/v1752910800/cld-sample-5.jpg",
     "https://res.cloudinary.com/dh1vlqndx/image/upload/v1752910800/samples/coffee.jpg",
-    "https://res.cloudinary.com/dh1vlqndx/image/upload/v1752910798/samples/breakfast.jpg",
+
   ];
 
   // Sample products data for each category

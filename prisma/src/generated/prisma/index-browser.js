@@ -174,7 +174,8 @@ exports.Prisma.CartScalarFieldEnum = {
   userId: 'userId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
-  deletedAt: 'deletedAt'
+  deletedAt: 'deletedAt',
+  couponId: 'couponId'
 };
 
 exports.Prisma.CartItemScalarFieldEnum = {
@@ -219,14 +220,6 @@ exports.Prisma.PaymentScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
-exports.Prisma.ConversationScalarFieldEnum = {
-  id: 'id',
-  publicId: 'publicId',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt',
-  deletedAt: 'deletedAt'
-};
-
 exports.Prisma.MessageScalarFieldEnum = {
   id: 'id',
   publicId: 'publicId',
@@ -239,13 +232,41 @@ exports.Prisma.MessageScalarFieldEnum = {
   deletedAt: 'deletedAt'
 };
 
-exports.Prisma.UserOnConversationScalarFieldEnum = {
-  userId: 'userId',
-  conversationId: 'conversationId',
+exports.Prisma.ConversationScalarFieldEnum = {
+  id: 'id',
+  publicId: 'publicId',
+  isGroup: 'isGroup',
+  name: 'name',
+  description: 'description',
+  profilePic: 'profilePic',
+  allowAllMessages: 'allowAllMessages',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
-  deletedAt: 'deletedAt',
+  deletedAt: 'deletedAt'
+};
+
+exports.Prisma.ParticipantScalarFieldEnum = {
+  userId: 'userId',
+  conversationId: 'conversationId',
+  isAdmin: 'isAdmin',
   lastRead: 'lastRead'
+};
+
+exports.Prisma.CouponScalarFieldEnum = {
+  id: 'id',
+  publicId: 'publicId',
+  code: 'code',
+  discountType: 'discountType',
+  discountValue: 'discountValue',
+  minOrderValue: 'minOrderValue',
+  maxUses: 'maxUses',
+  usedCount: 'usedCount',
+  startDate: 'startDate',
+  expiryDate: 'expiryDate',
+  isActive: 'isActive',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt'
 };
 
 exports.Prisma.SortOrder = {
@@ -308,9 +329,10 @@ exports.Prisma.ModelName = {
   Order: 'Order',
   OrderItem: 'OrderItem',
   Payment: 'Payment',
-  Conversation: 'Conversation',
   Message: 'Message',
-  UserOnConversation: 'UserOnConversation'
+  Conversation: 'Conversation',
+  Participant: 'Participant',
+  Coupon: 'Coupon'
 };
 
 /**

@@ -75,30 +75,33 @@ export default function ProfilePage() {
   if (isLoading) return <p className="text-amber-400 text-center mt-10">Loading...</p>;
   if (!user) return <p className="text-red-500 text-center mt-10">Unauthorized</p>;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
 
-    try {
-      const formData = new FormData();
-      formData.append('name', name);
-      formData.append('phone', phone);
-      if (password.trim()) formData.append('password', password);
-      if (profilePic) formData.append('profilePic', profilePic);
+  try {
+    const formData = new FormData();
+    formData.append('name', name);
+    formData.append('phone', phone);
+    if (password.trim()) formData.append('password', password);
+    if (profilePic) formData.append('profilePic', profilePic);
 
-      const result = await trigger(formData);
+    const result = await trigger(formData);
 
-      toast.success(result.message || 'Profile updated successfully');
-
-      await mutate(); // refresh session data
-      router.refresh(); // refresh UI
-    } catch (err) {
-      if (err instanceof Error) {
-        toast.error(err.message);
+    toast.success(result.message || 'Profile updated successfully');
+    await mutate(); // refresh session data
+    router.refresh(); // refresh UI
+  } catch (err) {
+    if (err instanceof Error) {
+      if (err.message.includes('Timeout')) {
+        toast.error('Image upload timed out. Please try a smaller image or check your network.');
       } else {
-        toast.error('Unexpected error occurred');
+        toast.error(err.message || 'Failed to update profile');
       }
+    } else {
+      toast.error('Unexpected error occurred');
     }
-  };
+  }
+};
 
   return (
     <div className="min-h-screen bg-zinc-900 flex items-center justify-center p-4">
@@ -147,16 +150,20 @@ export default function ProfilePage() {
         </div>
 
         {/* Profile Pic */}
-        <div className="mb-6">
-          <label className="block mb-1 text-sm font-medium text-amber-300">Profile Picture</label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => setProfilePic(e.target.files?.[0] || null)}
-            className="w-full text-zinc-100"
-          />
-        </div>
-
+       
+<div className="mb-6">
+  <label className="block mb-1 text-sm font-medium text-amber-300">Profile Picture</label>
+  <input
+    type="file"
+    accept="image/*"
+    onChange={(e) => {
+      const file = e.target.files?.[0] || null;
+      console.log('Selected file:', file); // Debug log
+      setProfilePic(file);
+    }}
+    className="w-full text-zinc-100"
+  />
+</div>
         <button
           type="submit"
           disabled={isMutating}

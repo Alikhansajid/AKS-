@@ -16,3 +16,14 @@ export enum PaymentStatus {
   SUCCESS = "SUCCESS",
   FAILED = "FAILED",
 }
+
+
+export enum ConversationType {
+  DIRECT = "DIRECT",
+  GROUP = "GROUP",
+}
+
+export enum GroupRole {
+  MEMBER = "MEMBER",
+  GROUP_ADMIN = "GROUP_ADMIN",
+}

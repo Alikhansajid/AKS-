@@ -1,3 +1,102 @@
+// import type { NextApiRequest } from "next";
+// import type { NextApiResponseServerIO } from "@/types/next";
+// import { Server } from "socket.io";
+// import { setServerSocket } from "@/lib/socket";
+
+// export default async function handler(
+//   req: NextApiRequest,
+//   res: NextApiResponseServerIO
+// ) {
+//   if (req.method !== "GET") {
+//     console.error("Method not allowed:", req.method);
+//     res.status(405).json({ error: "Method not allowed" });
+//     return;
+//   }
+
+//   // Prevent multiple server instances
+//   if (!res.socket.server.io) {
+//     console.log("Initializing Socket.IO server");
+//     const io = new Server(res.socket.server, {
+//       path: "/api/socket/io",
+//       addTrailingSlash: false,
+//     });
+//     res.socket.server.io = io;
+
+//     // Set the server-side Socket.IO instance
+//     setServerSocket(io);
+
+//     io.on("connection", (socket) => {
+//       console.log("🔌 New client connected:", socket.id);
+
+//       // Handle joining room (based on publicId or conversationId)
+//       socket.on("join", (data: { publicId?: string; conversationId?: string }) => {
+//         if (data.publicId) {
+//           socket.join(data.publicId);
+//           console.log("Client joined user room:", { publicId: data.publicId });
+//         }
+//         if (data.conversationId) {
+//           socket.join(data.conversationId);
+//           console.log("Client joined conversation room:", { conversationId: data.conversationId });
+//         }
+//       });
+
+//       // Handle leaving room
+//       socket.on("leave", (data: { conversationId: string }) => {
+//         socket.leave(data.conversationId);
+//         console.log("Client left conversation room:", { conversationId: data.conversationId });
+//       });
+
+//       // Handle typing event
+//       socket.on("typing", async (data: { conversationId: string; userId: string; userName?: string }) => {
+//         try {
+//           const { conversationId, userId, userName } = data;
+//           if (!conversationId || !userId) {
+//             console.error("Invalid typing data:", data);
+//             return;
+//           }
+//           io.to(conversationId).emit("typing", {
+//             conversationId,
+//             userId,
+//             userName: userName || "Someone",
+//           });
+//         } catch (error) {
+//           console.error(" Socket typing error:", { data, error });
+//         }
+//       });
+
+//       socket.on("disconnect", () => {
+//         console.log("🔌 Client disconnected:", socket.id);
+//       });
+//     });
+//   } else {
+//     console.log("🔌 Socket.IO server already initialized");
+//   }
+
+//   res.end();
+// }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import type { NextApiRequest } from "next";
 import type { NextApiResponseServerIO } from "@/types/next";
 import { Server } from "socket.io";
@@ -13,64 +112,74 @@ export default async function handler(
     return;
   }
 
-  // Prevent multiple server instances
-  if (!res.socket.server.io) {
-    console.log("Initializing Socket.IO server");
-    const io = new Server(res.socket.server, {
-      path: "/api/socket/io",
-      addTrailingSlash: false,
-    });
-    res.socket.server.io = io;
-
-    // Set the server-side Socket.IO instance
-    setServerSocket(io);
-
-    io.on("connection", (socket) => {
-      console.log("🔌 New client connected:", socket.id);
-
-      // Handle joining room (based on publicId or conversationId)
-      socket.on("join", (data: { publicId?: string; conversationId?: string }) => {
-        if (data.publicId) {
-          socket.join(data.publicId);
-          console.log("Client joined user room:", { publicId: data.publicId });
-        }
-        if (data.conversationId) {
-          socket.join(data.conversationId);
-          console.log("Client joined conversation room:", { conversationId: data.conversationId });
-        }
+  try {
+    // Prevent multiple server instances
+    if (!res.socket.server.io) {
+      console.log("🔌 Initializing Socket.IO server");
+      const io = new Server(res.socket.server, {
+        path: "/api/socket/io",
+        addTrailingSlash: false,
+        cors: {
+          origin: process.env.NEXT_PUBLIC_FRONTEND_URL || "http://localhost:3000",
+          methods: ["GET", "POST"],
+          credentials: true,
+        },
       });
+      res.socket.server.io = io;
 
-      // Handle leaving room
-      socket.on("leave", (data: { conversationId: string }) => {
-        socket.leave(data.conversationId);
-        console.log("Client left conversation room:", { conversationId: data.conversationId });
-      });
+      // Set the server-side Socket.IO instance
+      setServerSocket(io);
 
-      // Handle typing event
-      socket.on("typing", async (data: { conversationId: string; userId: string; userName?: string }) => {
-        try {
-          const { conversationId, userId, userName } = data;
-          if (!conversationId || !userId) {
-            console.error("Invalid typing data:", data);
-            return;
+      io.on("connection", (socket) => {
+        console.log("🔌 New client connected:", socket.id);
+
+        // Handle joining room
+        socket.on("join", (data: { publicId?: string; conversationId?: string }) => {
+          if (data.publicId) {
+            socket.join(data.publicId);
+            console.log("🔌 Client joined user room:", { publicId: data.publicId });
           }
-          io.to(conversationId).emit("typing", {
-            conversationId,
-            userId,
-            userName: userName || "Someone",
-          });
-        } catch (error) {
-          console.error(" Socket typing error:", { data, error });
-        }
-      });
+          if (data.conversationId) {
+            socket.join(data.conversationId);
+            console.log("🔌 Client joined conversation room:", { conversationId: data.conversationId });
+          }
+        });
 
-      socket.on("disconnect", () => {
-        console.log("🔌 Client disconnected:", socket.id);
+        // Handle leaving room
+        socket.on("leave", (data: { conversationId: string }) => {
+          socket.leave(data.conversationId);
+          console.log("🔌 Client left conversation room:", { conversationId: data.conversationId });
+        });
+
+        // Handle typing event
+        socket.on("typing", async (data: { conversationId: string; userId: string; userName?: string }) => {
+          try {
+            const { conversationId, userId, userName } = data;
+            if (!conversationId || !userId) {
+              console.error("Invalid typing data:", data);
+              return;
+            }
+            io.to(conversationId).emit("typing", {
+              conversationId,
+              userId,
+              userName: userName || "Someone",
+            });
+          } catch (error) {
+            console.error("Socket typing error:", { data, error });
+          }
+        });
+
+        socket.on("disconnect", () => {
+          console.log("🔌 Client disconnected:", socket.id);
+        });
       });
-    });
-  } else {
-    console.log("🔌 Socket.IO server already initialized");
+    } else {
+      console.log("🔌 Socket.IO server already initialized");
+    }
+
+    res.status(200).json({ message: "Socket.IO server initialized" });
+  } catch (error) {
+    console.error("🔌 Failed to initialize Socket.IO server:", error);
+    res.status(500).json({ error: "Failed to initialize Socket.IO server" });
   }
-
-  res.end();
 }

@@ -90,7 +90,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ con
         text: content,
         conversation: { connect: { publicId: conversationId } },
         sender: { connect: { id: sender.id } },
-        status: "SENT", 
+        status: "SENT",
       },
       include: {
         sender: {
@@ -114,16 +114,20 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ con
       sender: message.sender,
       content: message.text,
       createdAt: message.createdAt.toISOString(),
-      status: message.status, // Include status in the response
+      status: message.status,
     };
 
     try {
       const io = getServerSocket();
-      conversation.participants.forEach((p) => {
-        io.to(p.user.publicId).emit("message:active", formattedMessage);
-        io.to(p.user.publicId).emit("message:sidebar", formattedMessage);
-      });
-      io.to(conversationId).emit("message:active", formattedMessage);
+      if (io) {
+        conversation.participants.forEach((p) => {
+          io.to(p.user.publicId).emit("message:active", formattedMessage);
+          io.to(p.user.publicId).emit("message:sidebar", formattedMessage);
+        });
+        io.to(conversationId).emit("message:active", formattedMessage);
+      } else {
+        console.warn("Socket.IO server is not initialized, skipping event emission");
+      }
     } catch (e) {
       console.error("Failed to emit Socket.IO events:", e);
     }
@@ -134,7 +138,3 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ con
     return NextResponse.json({ error: "Failed to create message" }, { status: 500 });
   }
 }
-
-
-
-
