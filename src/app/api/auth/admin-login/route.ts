@@ -4,7 +4,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcrypt';
 
-// ⛳ Force Node.js runtime to allow cookie setting
 export const runtime = 'nodejs';
 
 export async function POST(req: NextRequest) {
@@ -33,14 +32,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Internal error during admin key check' }, { status: 500 });
   }
   console.log('✅ process.env keys:', Object.keys(process.env));
-console.log('🔑 ADMIN_KEY_HASH from process.env:', process.env.ADMIN_KEY_HASH);
-console.log('🌍 All env keys:', Object.keys(process.env));
-console.log('📦 Full env:', JSON.stringify(process.env, null, 2));
+// console.log(' ADMIN_KEY_HASH from process.env:', process.env.ADMIN_KEY_HASH);
+// console.log(' All env keys:', Object.keys(process.env));
+// console.log(' Full env:', JSON.stringify(process.env, null, 2));
 
 
-  console.log('✅ Loaded hash:', process.env.ADMIN_KEY_HASH);
-  console.log('✅ Admin key is valid, proceeding with login...');
-  console.log('🔑 ADMIN_KEY_HASH from .env:', process.env.ADMIN_KEY_HASH?.slice(0, 10)); // just for safety
+//   console.log(' Loaded hash:', process.env.ADMIN_KEY_HASH);
+//   console.log(' Admin key is valid, proceeding with login...');
+//   console.log(' ADMIN_KEY_HASH from .env:', process.env.ADMIN_KEY_HASH?.slice(0, 10)); // just for safety
 
   let user = await prisma.user.findFirst({ where: { role: 'ADMIN' } });
 

@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     });
 
     return NextResponse.json(categories);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error fetching categories:', error);
     return NextResponse.json({ error: 'Something went wrong' }, { status: 500 });
   }
@@ -29,6 +29,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { name, parentId } = await request.json();
+
     if (!name) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 });
     }
@@ -37,14 +38,15 @@ export async function POST(request: NextRequest) {
       data: {
         name,
         slug: name.toLowerCase().replace(/\s+/g, '-'),
-        parentId: parentId ? Number(parentId) : null,
-        updatedById: session.user.publicId,
+        parentId: parentId ? parseInt(parentId as string) : null,
+        updatedById: session.user.publicId ? parseInt(session.user.publicId as string) : null, // Use user.id if available
       },
     });
 
     return NextResponse.json(category, { status: 201 });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error creating category:', error);
     return NextResponse.json({ error: 'Something went wrong' }, { status: 500 });
   }
 }
+

@@ -2,10 +2,7 @@ import { NextResponse, NextRequest } from 'next/server';
 import { getSession } from '@/lib/session';
 import { prisma } from '@/lib/prisma';
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ publicId: string }> }
-) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ publicId: string }> }) {
   try {
     const session = await getSession(request);
     if (!session.user || session.user.role !== 'ADMIN') {
@@ -15,13 +12,14 @@ export async function DELETE(
     const { publicId } = await params;
 
     const category = await prisma.category.findUnique({
-      where: { publicId },
+      where: { publicId, deletedAt: null },
     });
 
-    if (!category || category.deletedAt) {
+    if (!category) {
       return NextResponse.json({ error: 'Category not found' }, { status: 404 });
     }
 
+    // Check if category has subcategories or products
     const hasSubcategories = await prisma.category.count({
       where: { parentId: category.id, deletedAt: null },
     });
@@ -30,19 +28,16 @@ export async function DELETE(
     });
 
     if (hasSubcategories > 0 || hasProducts > 0) {
-      return NextResponse.json(
-        { error: 'Cannot delete category with subcategories or products' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Cannot delete category with subcategories or products' }, { status: 400 });
     }
 
     await prisma.category.update({
-      where: { publicId },
-      data: { deletedAt: new Date(), updatedById: session.user.id },
-    });
+  where: { publicId },
+  data: { deletedAt: new Date(), updatedById: session.user.publicId ? parseInt(session.user.publicId as string) : null },
+});
 
     return NextResponse.json({ message: 'Category deleted successfully' });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error deleting category:', error);
     return NextResponse.json({ error: 'Something went wrong' }, { status: 500 });
   }

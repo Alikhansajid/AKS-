@@ -34,7 +34,6 @@ interface DashboardData {
   topCustomers: { customerName: string; orders: number; totalSpent: number }[];
 }
 
-// map-safe helpers (no `any`)
 function toOrderStatus(value: string): OrderStatus {
   if (Object.values(OrderStatus).includes(value as OrderStatus)) {
     return value as OrderStatus;

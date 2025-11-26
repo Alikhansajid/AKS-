@@ -1,6 +1,6 @@
 generator client {
   provider = "prisma-client-js"
-  output   = "../node_modules/.prisma/client"
+  
 }
 
 datasource db {
@@ -74,8 +74,6 @@ model Category {
 
   products Product[]
 
-  @@index([deletedAt])
-  @@index([parentId])
   @@map("category")
 }
 
@@ -92,7 +90,7 @@ model Product {
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
   deletedAt   DateTime? @map("deleted_at")
-  isfetch      Boolean   @default(false)
+  isfetch      Boolean  @default(false)
   sourceUrl   String?
   details     Json?
 
@@ -102,9 +100,6 @@ model Product {
   cartItems   CartItem[]
   orderItems  OrderItem[]
 
-  @@index([deletedAt])
-  @@index([categoryId])
-  @@index([publicId, deletedAt])
   @@map("product")
 }
 

@@ -168,3 +168,36 @@ export default function RootLayout({
 //toast should not appear on sent msg
 //use socket.io 
 //memoize use callback 
+
+
+//two listner on frontend one for active chat and other for new chats or previous chat but active 
+//chat-1  chat-2 
+//update list accordingly 
+//msg-chat pubID 
+//update chat and prepend msges 
+//chat pubID handles active chats 
+//chat-loginuser pubID handles previous or newchats (non active)
+
+
+
+
+
+
+//useronconveration ki jagha participant use krna hai
+//do not use enum for role use isadmin (boolean) in participant table
+//same for group chat boolean isgroup
+//combine group apis for images and form data 
+//update UI for image upload as group profile pic
+
+
+
+
+
+//scrape data from priceoye and add to database
+
+
+
+//detail fetched col in product table by default false 
+//col source url in product table (string)
+//details data type JSON (detail URL)
+

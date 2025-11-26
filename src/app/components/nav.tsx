@@ -54,21 +54,21 @@ interface Conversation {
   updatedAt: string;
 }
 
-// --- component --- //
+
 export default function Navbar() {
   const router = useRouter();
   const { mutate: globalMutate } = useSWRConfig();
 
-  // user session
+  
   const { data: sessionData } = useSWR<SessionResponse>('/api/auth/session', fetcher);
 
-  // cart
+
   const { data: serverCart } = useSWR<CartItem[]>('/api/cart', fetcher);
 
-  // conversations for unread count
+ 
   const { data: conversations } = useSWR<Conversation[]>('/api/conversations', fetcher);
 
-  // logout mutation
+ 
   const { trigger: triggerLogout, isMutating: isLoggingOut } = useSWRMutation(
     '/api/auth/logout',
     (url: string) => logoutFetcher(url)
@@ -83,7 +83,7 @@ export default function Navbar() {
   const isAdmin = user?.role === Role.ADMIN;
   const isRider = user?.role === Role.RIDER;
 
-  // local cart for guests
+
   useEffect(() => {
     if (!isLoggedIn) {
       const localCart = getLocalCart();
@@ -133,7 +133,7 @@ export default function Navbar() {
           </Link>
         )}
 
-        {/* Chat (all logged-in users, with unread conversation indication) */}
+        
         {isLoggedIn && (
           <Link
             href="/chat"
