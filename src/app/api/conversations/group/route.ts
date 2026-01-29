@@ -161,12 +161,12 @@ export async function POST(req: NextRequest) {
         .map((p) => p.user),
       lastMessage: conversation.messages[0]
         ? {
-            publicId: conversation.messages[0].publicId,
-            conversationPublicId: conversation.publicId!,
-            sender: conversation.messages[0].sender,
-            content: conversation.messages[0].text,
-            createdAt: conversation.messages[0].createdAt.toISOString(),
-          }
+          publicId: conversation.messages[0].publicId,
+          conversationPublicId: conversation.publicId!,
+          sender: conversation.messages[0].sender,
+          content: conversation.messages[0].text,
+          createdAt: conversation.messages[0].createdAt.toISOString(),
+        }
         : null,
       unreadCount: 0,
       updatedAt: conversation.updatedAt.toISOString(),
@@ -195,7 +195,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: Promise<{ publicId: string }> }) {
+export async function PATCH(req: NextRequest) {
   let publicId: string | undefined;
   try {
     const session = await getSession(req) as Session;
@@ -207,9 +207,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ pu
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const resolvedParams = await params;
-    publicId = resolvedParams.publicId;
     const formData = await req.formData();
+    publicId = formData.get("publicId") as string;
+    if (!publicId) {
+      return NextResponse.json({ error: "Missing publicId" }, { status: 400 });
+    }
     const name = formData.get("name") as string | undefined;
     const description = formData.get("description") as string | undefined;
     const profilePic = formData.get("profilePic") as string | undefined;
@@ -247,12 +249,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ pu
         .map((p) => p.user),
       lastMessage: conversation.messages[0]
         ? {
-            publicId: conversation.messages[0].publicId,
-            conversationPublicId: conversation.publicId!,
-            sender: conversation.messages[0].sender,
-            content: conversation.messages[0].text,
-            createdAt: conversation.messages[0].createdAt.toISOString(),
-          }
+          publicId: conversation.messages[0].publicId,
+          conversationPublicId: conversation.publicId!,
+          sender: conversation.messages[0].sender,
+          content: conversation.messages[0].text,
+          createdAt: conversation.messages[0].createdAt.toISOString(),
+        }
         : null,
       unreadCount: 0,
       updatedAt: conversation.updatedAt.toISOString(),

@@ -5,6 +5,7 @@
     "scripts": {
         "dev": "next dev",
         "build": "prisma generate && next build",
+        "pages:build": "npx @cloudflare/next-on-pages",
         "start": "next start",
         "lint": "next lint",
         "postinstall": "prisma generate",
@@ -55,6 +56,7 @@
         "uuid": "^11.1.0"
     },
     "devDependencies": {
+        "@cloudflare/next-on-pages": "^1.13.16",
         "@eslint/eslintrc": "^3",
         "@tailwindcss/postcss": "^4",
         "@types/bcrypt": "^5.0.2",

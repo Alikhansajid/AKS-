@@ -32,12 +32,7 @@ interface Session {
   user?: User;
 }
 
-interface CartItem {
-  id: number;
-  publicId: string;
-  quantity: number;
-  product: Product;
-}
+
 
 interface CartArgs {
   publicId: string;
