@@ -30,7 +30,7 @@
         "got": "^14.4.8",
         "iron-session": "^8.0.4",
         "nanoid": "^5.1.5",
-        "next": "^16.2.9",
+        "next": "^15.5.2",
         "next-auth": "^4.24.11",
         "node-cache": "^5.1.2",
         "node-cron": "^4.2.1",
